@@ -1,0 +1,931 @@
+---
+title: "Fuel_Load_Calculator_DroughtMortality"
+author: "Danny Foster"
+date: "November 16, 2017"
+output: html_document
+---
+
+**ABOUT:**
+
+This file includes code and supporting documentation for a method to calculate total fuel loads from Brown's transects for Sierra Nevada tree species. This method was originally developed by Jason Moghaddas and Scott Stephens, and relies on the work of many others (see documentation). The purpose of this document is to implement the method in R for improved usability, repeatability, and clarity. The R implementation of this project was developed by Danny Foster in 2017.
+
+#The Script
+
+##USERS: EDIT THESE VALUES
+
+The script will work out of the box as long as these values are correctly set and the input data are valid. See "Import and check data" for descriptions of proper formatting for the input data.
+
+```{r}
+# Default values will use the example data included with this script.
+setwd('D://Foster/FFS/Fuels_for_Kuskulis')
+
+# all files must be in csv format, and all filenames should include the '.csv' suffix
+
+fuels_data_source = 'fuels_processed.csv'
+
+trees_data_source = 'treelist_processed.csv'
+
+full_output_filename = 'Drought_Mortality_fuel_loads_full.csv'
+
+results_output_filename = 'Drought_Mortality_fuel_loads_results.csv'
+
+#The user must also define the transect lengths for each size class, in meters. **Keep in mind that if sampling protocol changed from one year to the next (e.g. crews used 6-foot transects one year and 2-meter transects the next), you must edit the transect lengths for specific rows.** (See code under "Calculate Fuel Loads Using Coefficients.")
+
+x1h_transect_length = 2
+
+x10h_transect_length = 2
+
+x100h_transect_length = 3
+
+x1000h_transect_length = 12.62
+
+
+
+```
+
+Users may wish to modify some portion of the code below to better suit their data. In particular: 
+
+**users with transect-level information on slope should see the section "Calculate Slope Correction Factor"**
+
+**If tansect lengths are not consistent across the entire dataset, users should refer to the section "Incorporate Transect Lengths"**
+
+
+##Setup
+
+###Building Constant Tables
+
+Tables are copied from the relevant literature: Van Wagtendonk et al. (1996), Van Wagtendonk et al. (1998), and Van Wagner (1982)
+
+```{r}
+# Regression coefficients for litter, Duff, and litter&Duff weight (kg m-2) as a function of depth in cm for the 19 Sierra Nevada conifers listed
+# Each regression went through the origin, was based on 80 observations, and was significant at the 0.05 level
+# Source: van Wagtendonk et al. 1998, table 7
+
+vw98_spp = c("Douglas-fir","Foothill pine","Foxtail pine","Giant sequoia","Incense-cedar","Jeffrey pine","Knobcone pine","Limber pine","Lodgepole pine","Mountain hemlock","Ponderosa pine","Red fir","Singleleaf pinyon","Sugar pine","Washoe pine","Western juniper","Western white pine","White fir", "Whitebark pine","All species", "Unknown")
+
+vw98_spp_code = c("PSME","PISA","PIBA", "SEGI", "CADE", "PIJE", "PIAT", "PIFL", "PICO", "TSME", "PIPO", "ABMA", "PIMO1", "PILA", "PIWA", "JUOC", "PIMO2", "ABCO", "PIAL", "ALLSPP", "OTHER")
+
+vw98_Litter_coeff = c(0.864,0.111,0.886,0.990,1.276,0.358,0.339,0.889,0.951,1.102,0.276,0.530,0.906,0.304,0.600,0.832,0.542,1.050,0.540,0.363,0.363)
+
+vw98_Duff_coeff = c(1.319,1.448,2.504,1.648,1.675,1.707,1.646,2.337,1.671,1.876,1.402,1.727,2.592,1.396,1.870,1.798,1.422,1.518,1.895,1.750, 1.750)
+
+vw98_LitterDuff_coeff = c(1.295,1.220,2.360,1.632,1.664,1.496,1.274,2.255,1.612,1.848,1.233,1.722,2.478,1.189,1.719,1.763,1.485,1.572,1.802,1.624, 1.624)
+
+litterduff_coeffs = data.frame(species=vw98_spp,spp=vw98_spp_code,litter_coeff=vw98_Litter_coeff,duff_coeff=vw98_Duff_coeff,litterduff_coeff=vw98_LitterDuff_coeff)
+
+
+
+
+# Average squared quadratic mean diameter (cm-2) by fuel size class (cm) for 19 Sierra Nevada conifers
+# Source: van Wagtendonk et al. 1996, table 3
+
+# This table has been slightly modified from the original: The original table does not give values for 1000h fuels
+# of Pinus balfouriana, Pinus Monticola, and Pinus sabiniana, instead providing "NA" in those spaces.
+# To increase flexibility, I have substituted the "all species" average of 127.24 for those species.
+
+vw96_spp = c("Abies concolor","Abies magnifica","Calocedrus decurrens","Juniperus occidentalis","Pinus albicaulis","Pinus attenuata","Pinus balfouriana","Pinus contorta","Pinus flexilis","Pinus jeffreyi","Pinus lambertiana","Pinus monophylla","Pinus monticola","Pinus ponderosa","Pinus sabiniana","Pinus washoensis","Pseudotsuga menziesii","Seguoiadendron giganteum","Tsuga mertensiana","All Species", "Other")
+
+vw96_spp_code = c("ABCO", "ABME", "CADE", "JUOC", "PIAL", "PIAT", "PIBA", "PICO", "PIFL", "PIJE", "PILA", "PIMO1", "PIMO2", "PIPO", "PISA", "PIWA", "PSME", "SEGI", "TSME", "ALLSPP", "OTHER")
+
+vw96_qmd_1h = c(0.08,0.10,0.09,0.08,0.13,0.10,0.12,0.10,0.21,0.15,0.12,0.09,0.08,0.23,0.14,0.22,0.06,0.14,0.05,0.12, 0.12)
+
+vw96_qmd_10h = c(1.32,1.32,1.23,1.61,1.21,1.25,0.92,1.44,1.28,1.25,1.46,1.41,0.79,1.56,0.94,1.37,1.37,1.28,1.46,1.28, 1.28)
+
+vw96_qmd_100h = c(11.56,16.24,20.79,13.92,14.75,9.68,12.82,13.39,17.72,17.32,13.61,11.56,9.92,19.36,12.91,13.47,12.04,17.06,13.61,14.52, 14.52)
+
+vw96_qmd_1000h = c(162.56,219.93,74.30,61.62,92.74,70.39,127.24,138.06,115.78,135.49,169.52,129.96,127.24,101.81,127.24,122.77,75.69,167.70,115.99,127.24, 127.24)
+
+QMDcm = data.frame(species=vw96_spp,spp=vw96_spp_code,x1h=vw96_qmd_1h,x10h=vw96_qmd_10h,x100h=vw96_qmd_100h,x1000h=vw96_qmd_1000h)
+
+
+# Average secant of acute angles of inclination of nonhorizontal particles by fuel size class (cm) for 19 Sierra Nevada conifers
+# Source: van Wagtendonk et al. 1996, table 6. Note that these values contradict the statement in the text that "The average secant of the acute angle to the horizontal for the 7.62+cm (3+ in) size class for asll species was 2.67 (Table 6)." I believe this statement is a typo, and that the values in the table are correct (they are more consistent with Brown 1974).
+
+# This table has been slightly modified from the original: NA values for 1000h secant of Pinus balfouriana, Pinus monticola, and Pinus sabiniana have been replaced with the "All Species" average of 1.02
+
+vw96_sec_1h = c(1.03,1.03,1.02,1.03,1.02,1.03,1.02,1.02,1.02,1.03,1.04,1.02,1.03,1.02,1.05,1.02,1.03,1.02,1.04,1.03, 1.03)
+
+vw96_sec_10h = c(1.02,1.02,1.02,1.04,1.02,1.02,1.02,1.02,1.02,1.03,1.04,1.01,1.02,1.03,1.03,1.02,1.02,1.02,1.02,1.02,1.02)
+
+vw96_sec_100h = c(1.02,1.01,1.03,1.04,1.02,1.00,1.01,1.01,1.01,1.04,1.03,1.01,1.06,1.02,1.02,1.01,1.03,1.02,1.02,1.02,1.02)
+
+vw96_sec_1000h = c(1.01,1.00,1.06,1.04,1.02,1.02,1.02,1.05,1.01,1.05,1.03,1.05,1.02,1.01,1.02,1.05,1.04,1.01,1.00,1.02,1.02)
+
+SEC = data.frame(species=vw96_spp,spp=vw96_spp_code,x1h=vw96_sec_1h,x10h=vw96_sec_10h,x100h=vw96_sec_100h,x1000h=vw96_sec_1000h)
+
+
+# Average specific gravity by fuel size class (cm) for 19 Sierra Nevada conifers
+# Source: van Wagtendonk et al. 1996, table 8.
+# This table has been slightly modified from the original: NA values for 100h fuels for Pinus balfouriana and Pinus monophylla, and NA values for 1000h fuels from Juniperus occidentalis, Pinus attenuata, Pinus balfouriana, Pinus monophylla, Pinus monticola, and Pinus sabiniana have been replaced with the "all species" averages for 100h and 1000h fuels, respectively
+
+vw96_sg_1000r = 0.36
+
+vw96_sg_1h = c(0.53,0.57,0.59,0.67,0.55,0.59,0.59,0.53,0.57,0.53,0.59,0.65,0.56,0.55,0.64,0.53,0.60,0.57,0.67,0.58,0.58)
+vw96_sg_10h = c(0.54,0.56,0.54,0.65,0.49,0.55,0.61,0.48,0.57,0.55,0.59,0.64,0.56,0.56,0.61,0.52,0.61,0.57,0.65,0.57,0.57)
+vw96_sg_100h = c(0.57,0.47,0.55,0.62,0.48,0.39,0.53,0.54,0.54,0.55,0.52,0.53,0.49,0.48,0.43,0.44,0.59,0.56,0.62,0.53,0.53)
+vw96_sg_1000s = c(0.32,0.38,0.41,0.47,0.42,0.47,0.47,0.58,0.63,0.47,0.43,0.47,0.47,0.40,0.47,0.35,0.35,0.54,0.66,0.47,0.47)
+
+SG = data.frame(species=vw96_spp,spp=vw96_spp_code,x1h=vw96_sg_1h,x10h=vw96_sg_10h,x100h=vw96_sg_100h,x1000s=vw96_sg_1000s)
+
+
+
+
+
+# Unit conversion constants (k-values, aka "const") from Van Wagner 1982, table 1
+kvals = data.frame(
+  fuel_diam = c("cm","cm","cm","cm","in","in","in","in"),
+  transect_length = c("m","m","m","m","ft","ft","ft","ft"),
+  volume_fuel_per_area = c("m^3/m^2","m^3/ha",NA,NA,"ft^3/ft^2","ft^3/ac",NA,NA),
+  weight_fuel_per_area = c(NA,NA,"kg/m^2","tons/ha",NA,NA,"lb/ft^2","tons/ac"),
+  k = c(0.0001234,1.234,0.1234,1.234,0.008567,373.3,0.5348,11.65)
+)
+
+
+
+```
+
+###Install and/or import required packages
+
+```{r}
+
+# INSTALL OR LOAD PACKAGES
+#install.packages('reshape2')
+#install.packages('lubridate')
+
+library(reshape2)
+library(lubridate)
+
+```
+
+###Import and Check Data
+
+Data import and validity testing
+
+####Fuels Transects
+
+At a minimum, the transects data must include:
+
+**plot_id**: Plot ids must be unique plot identifiers. (E.g., if you have "stand A plot 1" and "stand B plot 1", you should relabel the plots as "A1" and "B1".) There may be multiple inventory dates per plot_id, or multiple transects sharing a plot_id. 
+
+**inv_date**: the date of measurement. There must be a 1:1 match between the dates of fuels measurements and dates of trees data. 
+
+**azimuth**: Identifier for individual transects within plots. Must be unique within a (plot_id:inv_date).
+
+**count_1h, count_10h, count_100h**: Transect counts of the number of intersections for 1-, 10-, and 100-hour fuels, respectively.
+
+**duff_depth and litter_depth**: Average depth of duff and litter on the transect. Users with multiple measurements per transect of litter and/or duff should average them together before import. Depths must be recorded in cm.
+
+**sum_d2_1000r and sum_d2_1000s**: The sum-of-squared-diameters for 1000-hour fuels on the transect, for rotten and sound fuels respectively. Users must aggregate their large fuels (1000-hour) into sound or rotten classes, and sum the squared diameters (in cm) for all 1000-s or 1000-r intersections on the transect.
+
+
+```{r}
+# import the csv data
+fuels.measurements = read.csv(fuels_data_source)
+
+# examine the imported dataframe
+head(fuels.measurements)
+
+
+# validate classes for columns
+
+## 'inv_date' should be a lubridate Date object
+fuels.measurements['inv_date'] = as.Date(fuels.measurements$inv_date, '%m/%d/%Y')
+
+
+#
+```
+
+
+####Overstory Data
+
+To describe the overstory for each plot location, provide a treelist. Each row in the treelist identifies the measurements (species and DBH) of an individual tree within a (plot_id:inv_date).
+
+At a minimum, the treelist must include columns for:
+
+**plot_id**: A unique plot identifier matching the fuels measurements.
+
+**inv_date**: the date of measurement. There must be a 1:1 match between the dates of fuels measurements and the dates of the treelist measurements. (plot_id:inv_date) must uniquely identify a measurement in both the fuels and the trees data.  
+
+**species**: A species identifier code for the individual tree. Must be in four-letter scientific format (e.g. "ABCO", not "WF", "White fir", "Abies concolor", etc.) Compare your species codes to those included in the Van Wagner constant tables to ensure correct matching.
+
+Note that singleleaf pinyon (*Pinus monophylla*) and western white pine (*Pinus monticola*) would share the code "PIMO": These should be labeled "PIMO1" and "PIMO2", respectively.
+
+**dbh**: The diameter of the tree in centimeters.
+
+
+```{r}
+trees.measurements = read.csv(trees_data_source)
+
+head(trees.measurements)
+
+# validate classes for columns
+trees.measurements['inv_date'] = as.Date(trees.measurements$inv_date, '%m/%d/%Y')
+
+# Re-label species not included in the Van Wagtendonk tables as 'OTHER' to ensure proper processing
+
+## first, convert the SPECIES column from factor to string
+
+trees.measurements['species'] = as.character(trees.measurements[,'species'])
+
+## second, convert any species not included in both the van wagtendonk tables to 'OTHER'
+trees.measurements[!is.element(trees.measurements$species,vw96_spp_code)|
+                   !is.element(trees.measurements$species,vw98_spp_code),
+                 'species'] = 'OTHER'
+
+## finally, convert species back to factor
+
+trees.measurements['species'] = as.factor(trees.measurements[,'species'])
+
+```
+
+####Metadata
+
+#####Define K-Value
+
+The k-value is a unit-conversion constant. This script assumes users supply fuel diameters in cm, transect lengths in meters, and want to calculate fuel loads as metric tonnes / hectare. Using the kvals table, we set our specific k-value to 1.234 accordingly. This script has not been tested with other combinations of units, and it is strongly recommended that users convert all their data to these units before attempting to calculate fuel loads.
+
+```{r}
+k_value = 1.234
+```
+
+
+
+
+##Calculate Fuel Loads from Measurements
+
+###Match Overstory Measurements to Fuels Measurements
+
+####Using the treelist data, calculate the proportion of plot basal area occupied by each species
+
+```{r}
+# Calculate basal area represented by each individual tree from the given DBH
+trees.measurements['basal_area'] = 0.00007854*(trees.measurements[,'dbh']**2)
+
+# Drop the dbh column
+trees.measurements = trees.measurements[,c('plot_id','inv_date','species','basal_area')]
+
+# sum up the basal area for species (within a plot_id:inv_date)
+overstory.long = aggregate(basal_area~species+plot_id+inv_date, data=trees.measurements, FUN=sum)
+
+# calculate the total basal area on each plot_id:inv_date for all species
+overstory.all = aggregate(basal_area~plot_id+inv_date, data=trees.measurements, FUN=sum)
+
+# relabel the total basal area column
+overstory.all['basal_area.all'] = overstory.all[,'basal_area']
+
+# for each (species:plot_id:inv_date), add a column for the total basal area (all species) on that plot_id:inv_date
+overstory.long = merge(x=overstory.long,
+                       y=overstory.all[,c('plot_id','inv_date','basal_area.all')],
+                       by=c('plot_id','inv_date'))
+
+# get the proportion of total plot_id:inv_date basal area represented by each species in the measurement
+overstory.long['pBA'] = overstory.long[,'basal_area']/overstory.long[,'basal_area.all']
+
+# switch from long to wide format, so that we wind up with one row per plot_id:inv_date
+# and columns for each species and all species
+overstory.molten = melt(overstory.long,
+                        id.vars = c('plot_id','inv_date','species'),
+                        measure.vars=c('pBA'))
+
+overstory.wide = dcast(overstory.molten,
+                       plot_id+inv_date~variable+species,
+                       margins=c('species'),
+                       fun.aggregate=sum)
+
+head(overstory.wide)
+
+```
+
+####Merge overstory data to fuels transects
+
+```{r}
+combined_measurements = merge(overstory.wide,
+                              fuels.measurements,
+                              by=c('plot_id','inv_date'),
+                              all.y=TRUE) # we may have multiple transects per overstory plot
+
+head(combined_measurements)
+
+```
+
+###Calculate Fuel Measurement Coefficients Using Overstory Characteristics
+
+####Setup
+
+```{r}
+# Each vector of coefficients has length equal to the number of rows in the combined measurements table
+nrows = length(combined_measurements[,'plot_id'])
+
+# The list of species included in the entire dataset
+get_spp_codes = function(measurements){
+  result = names(measurements)
+  remove = c("plot_id","inv_date","azimuth","count_1h","count_10h","count_100h",
+             "duff_depth","litter_depth","sum_d2_r","sum_d2_s","pBA_(all)")
+  result = result[! result %in% remove]
+  result = sapply(result, FUN=function(x){substring(x,5)}, USE.NAMES=FALSE)
+  return(result)
+}
+
+
+species_list = get_spp_codes(combined_measurements)
+
+species_list
+
+
+lookup_vw = function(constants,species,value){
+  return(constants[constants$'spp'==species,value])
+}
+```
+
+####Litter and Duff Coefficients
+
+```{r}
+# Calculate coefficient for litter depth
+
+weighted_litter_coeffs = numeric(nrows)
+
+# for each row in the combined measurements table
+for(i in 1:nrows){
+  
+  # the weighted aggregate coefficient starts at 0
+  weighted_litter_coeff = 0
+  
+  # for each tree species included in the dataset
+  for (spp in species_list){
+    
+    # look up the proportion of plot_id:inv_date basal area occupied by spp
+    pba = combined_measurements[i, paste0('pBA_',spp)]
+    
+    # look up the coefficient given by Van Wagtendonk for litter of spp
+    litter_coeff_spp = lookup_vw(litterduff_coeffs, spp, 'litter_coeff')
+    
+    # The weighted contribution to the overall coefficient is the proportion of basal area times the species coefficient
+    litter_weighted_spp = litter_coeff_spp*pba
+    
+    # Include the weighted contribution of spp to the overall coefficient
+    weighted_litter_coeff = weighted_litter_coeff+litter_weighted_spp
+    
+  }
+  
+  # the weighted coefficient for row i is the overall coefficient calculated from all species*basal areas:
+  weighted_litter_coeffs[i] = weighted_litter_coeff
+  
+}
+
+combined_measurements['litter_coeff'] = weighted_litter_coeffs
+
+
+# calculate coefficient for duff depth
+
+weighted_duff_coeffs = numeric(nrows)
+
+# for each row in the combined measurements table
+for(i in 1:nrows){
+  
+  # the weighted aggregate coefficient starts at 0
+  weighted_duff_coeff = 0
+  
+  # for each tree species included in the dataset
+  for (spp in species_list){
+    
+    # look up the proportion of plot_id:inv_date basal area occupied by spp
+    pba = combined_measurements[i, paste0('pBA_',spp)]
+    
+    # look up the coefficient given by Van Wagtendonk for duff of spp
+    duff_coeff_spp = lookup_vw(litterduff_coeffs, spp, 'duff_coeff')
+    
+    # The weighted contribution to the overall coefficient is the proportion of basal area times the species coefficient
+    duff_weighted_spp = duff_coeff_spp*pba
+    
+    # Include the weighted contribution of spp to the overall coefficient
+    weighted_duff_coeff = weighted_duff_coeff+duff_weighted_spp
+    
+  }
+  
+  # the weighted coefficient for row i is the overall coefficient calculated from all species*basal areas:
+  weighted_duff_coeffs[i] = weighted_duff_coeff
+  
+}
+
+combined_measurements['duff_coeff'] = weighted_duff_coeffs
+
+
+
+```
+
+####1-, 10-, and 100-hour coefficients
+
+```{r}
+
+head(QMDcm)
+
+weighted_1h_coeffs = numeric(nrows)
+
+# for each row in the combined measurements table
+for(i in 1:nrows){
+  
+  # the weighted aggregate values for qmd, sec, and sg start at 0
+  average_1h_qmd = 0
+  average_1h_sec = 0
+  average_1h_sg = 0
+  
+  # for each tree species included in the dataset
+  for (spp in species_list){
+    
+    # look up the proportion of plot_id:inv_date basal area occupied by spp
+    pba = combined_measurements[i, paste0('pBA_',spp)]
+    
+    # look up the average qmd of 1h fuels from spp
+    qmd_spp = lookup_vw(QMDcm, spp, 'x1h')
+    
+    # The weighted contribution to the average qmd is the proportion of basal area times the species coefficient
+    weighted_1h_qmd = qmd_spp*pba
+    
+    # Include the weighted contribution of spp to the overall coefficient
+    average_1h_qmd = average_1h_qmd+weighted_1h_qmd
+    
+    # similar calculations for SEC and SG
+    sec_spp = lookup_vw(SEC,spp, 'x1h')
+    weighted_1h_sec = sec_spp*pba
+    average_1h_sec = average_1h_sec+weighted_1h_sec
+    
+    sg_spp = lookup_vw(SG, spp, 'x1h')
+    weighted_1h_sg = sg_spp*pba
+    average_1h_sg = average_1h_sg+weighted_1h_sg
+  }
+  
+  # the weighted coefficient for row i is the product of the species-weighted averages for QMD, SEC, and SG:
+  weighted_1h_coeffs[i] = average_1h_qmd*average_1h_sec*average_1h_sg
+  
+}
+
+combined_measurements['x1h_coeff'] = weighted_1h_coeffs
+
+head(combined_measurements)
+
+
+# calculate 10-hour coefficients
+
+weighted_10h_coeffs = numeric(nrows)
+
+# for each row in the combined measurements table
+for(i in 1:nrows){
+  
+  # the weighted aggregate values for qmd, sec, and sg start at 0
+  average_10h_qmd = 0
+  average_10h_sec = 0
+  average_10h_sg = 0
+  
+  # for each tree species included in the dataset
+  for (spp in species_list){
+    
+    # look up the proportion of plot_id:inv_date basal area occupied by spp
+    pba = combined_measurements[i, paste0('pBA_',spp)]
+    
+    # look up the average qmd of 10h fuels from spp
+    qmd_spp = lookup_vw(QMDcm, spp, 'x10h')
+    
+    # The weighted contribution to the average qmd is the proportion of basal area times the species coefficient
+    weighted_10h_qmd = qmd_spp*pba
+    
+    # Include the weighted contribution of spp to the overall coefficient
+    average_10h_qmd = average_10h_qmd+weighted_10h_qmd
+    
+    # similar calculations for SEC and SG
+    sec_spp = lookup_vw(SEC,spp, 'x10h')
+    weighted_10h_sec = sec_spp*pba
+    average_10h_sec = average_10h_sec+weighted_10h_sec
+    
+    sg_spp = lookup_vw(SG, spp, 'x10h')
+    weighted_10h_sg = sg_spp*pba
+    average_10h_sg = average_10h_sg+weighted_10h_sg
+  }
+  
+  # the weighted coefficient for row i is the product of the species-weighted averages for QMD, SEC, and SG:
+  weighted_10h_coeffs[i] = average_10h_qmd*average_10h_sec*average_10h_sg
+  
+}
+
+combined_measurements['x10h_coeff'] = weighted_10h_coeffs
+
+head(combined_measurements)
+
+
+# Calculate 100-hour coefficients
+
+weighted_100h_coeffs = numeric(nrows)
+
+# for each row in the combined measurements table
+for(i in 1:nrows){
+  
+  # the weighted aggregate values for qmd, sec, and sg start at 0
+  average_100h_qmd = 0
+  average_100h_sec = 0
+  average_100h_sg = 0
+  
+  # for each tree species included in the dataset
+  for (spp in species_list){
+    
+    # look up the proportion of plot_id:inv_date basal area occupied by spp
+    pba = combined_measurements[i, paste0('pBA_',spp)]
+    
+    # look up the average qmd of 100h fuels from spp
+    qmd_spp = lookup_vw(QMDcm, spp, 'x100h')
+    
+    # The weighted contribution to the average qmd is the proportion of basal area times the species coefficient
+    weighted_100h_qmd = qmd_spp*pba
+    
+    # Include the weighted contribution of spp to the overall coefficient
+    average_100h_qmd = average_100h_qmd+weighted_100h_qmd
+    
+    # similar calculations for SEC and SG
+    sec_spp = lookup_vw(SEC,spp, 'x100h')
+    weighted_100h_sec = sec_spp*pba
+    average_100h_sec = average_100h_sec+weighted_100h_sec
+    
+    sg_spp = lookup_vw(SG, spp, 'x100h')
+    weighted_100h_sg = sg_spp*pba
+    average_100h_sg = average_100h_sg+weighted_100h_sg
+  }
+  
+  # the weighted coefficient for row i is the product of the species-weighted averages for QMD, SEC, and SG:
+  weighted_100h_coeffs[i] = average_100h_qmd*average_100h_sec*average_100h_sg
+  
+}
+
+combined_measurements['x100h_coeff'] = weighted_100h_coeffs
+
+
+```
+
+####1000-hour coefficients
+
+```{r}
+weighted_1000s_coeffs = numeric(nrows)
+
+# for each row in the combined measurements table
+for(i in 1:nrows){
+  
+  # the weighted aggregate values for sec, and sg start at 0
+  average_1000s_sec = 0
+  average_1000s_sg = 0
+  
+  # for each tree species included in the dataset
+  for (spp in species_list){
+    
+    # look up the proportion of plot_id:inv_date basal area occupied by spp
+    pba = combined_measurements[i, paste0('pBA_',spp)]
+    
+    # similar calculations for SEC and SG
+    sec_spp = lookup_vw(SEC,spp, 'x1000h')
+    weighted_1000s_sec = sec_spp*pba
+    average_1000s_sec = average_1000s_sec+weighted_1000s_sec
+    
+    sg_spp = lookup_vw(SG, spp, 'x1000s')
+    weighted_1000s_sg = sg_spp*pba
+    average_1000s_sg = average_1000s_sg+weighted_1000s_sg
+  }
+  
+  # the weighted coefficient for row i is the product of the species-weighted averages for QMD, SEC, and SG:
+  weighted_1000s_coeffs[i] = average_1000s_sec*average_1000s_sg
+  
+}
+
+combined_measurements['x1000s_coeff'] = weighted_1000s_coeffs
+
+# calculate 1000-hour (rotten) coefficient
+
+weighted_1000r_coeffs = numeric(nrows)
+
+# for each row in the combined measurements table
+for(i in 1:nrows){
+  
+  # the weighted aggregate values for sec starts at 0. SG for rotten fuels does not vary by species:
+  average_1000r_sec = 0
+  average_1000r_sg = 0.36
+  
+  # for each tree species included in the dataset
+  for (spp in species_list){
+    
+    # look up the proportion of plot_id:inv_date basal area occupied by spp
+    pba = combined_measurements[i, paste0('pBA_',spp)]
+    
+    # similar calculations for SEC
+    sec_spp = lookup_vw(SEC,spp, 'x1000h')
+    weighted_1000r_sec = sec_spp*pba
+    average_1000r_sec = average_1000r_sec+weighted_1000r_sec
+  }
+  
+  # the weighted coefficient for row i is the product of the species-weighted averages for QMD, SEC, and SG:
+  weighted_1000r_coeffs[i] = average_1000r_sec*average_1000r_sg
+  
+}
+
+combined_measurements['x1000r_coeff'] = weighted_1000r_coeffs
+
+
+
+
+head(combined_measurements)
+
+
+
+```
+
+###Calculate Fuel Loads Using Coefficients and Transect Measurements
+
+For an explanation of the equations used, see the "Documentation" section.
+
+####Incorporate transect lengths
+
+```{r}
+# Apply the default values specified above
+
+combined_measurements['x1h_L'] = x1h_transect_length
+combined_measurements['x10h_L'] = x10h_transect_length
+combined_measurements['x100h_L'] = x100h_transect_length
+combined_measurements['x1000h_L'] = x1000h_transect_length
+
+# Edit the transect lengths for specific subsets of the data as needed
+
+# For example, in the example dataset the 2009 measurements actually used 2 meter transects, rather than 6 foot ones.
+# I've commented out these lines so that the script assumes the default values for all years, but these lines are
+# necessary to make the example data calculations accurate.
+combined_measurements[year(combined_measurements$inv_date)==2009,'x1h_L'] = 2
+combined_measurements[year(combined_measurements$inv_date)==2009, 'x10h_L'] = 2
+combined_measurements[year(combined_measurements$inv_date)==2009, 'x100h_L'] = 3
+combined_measurements[year(combined_measurements$inv_date)==2009, 'x1000h_L'] = 11.3
+
+head(combined_measurements)
+
+```
+
+####Calculate Slope Correction Factor
+
+Brown's equations include the option to correct for slope effect on horizontal length of transects. Keep in mind that for this correction factor to be accurate, you should be correcting for the *transect* slope, not the *plot* slope. By default, we set the slope correction factor to 1 (no slope). Users with transect-specific slopes may want to adjust this column accordingly. The equation for slope correction factor is:
+
+$SLP = c = \sqrt{1+(\frac{percentslope}{100})^2}$ per Brown 1974.
+
+```{r}
+
+combined_measurements['slp_c'] = 1
+
+```
+
+####Calculate Litter and Duff Loads
+
+```{r}
+# load = depth(cm)* coeff * 10 (to convert from kg/m2 to mtons/ha)
+
+combined_measurements['fuelload_litter_tonha'] = combined_measurements$litter_depth*combined_measurements$litter_coeff*10
+
+combined_measurements['fuelload_duff_tonha'] = combined_measurements$duff_depth*combined_measurements$duff_coeff*10
+
+```
+
+####Calculate 1-through-100 hour fuel loads
+```{r}
+
+# load = ((coefficient)(n_intersections)(k-value)(slope correction factor))/(transect length)
+
+combined_measurements['fuelload_1h_tonha'] = (combined_measurements$count_1h*
+                                                combined_measurements$x1h_coeff*
+                                                combined_measurements$slp_c*
+                                                k_value) / (combined_measurements$x1h_L)
+
+combined_measurements['fuelload_10h_tonha'] = (combined_measurements$count_10h*
+                                                combined_measurements$x10h_coeff*
+                                                combined_measurements$slp_c*
+                                                k_value) / (combined_measurements$x10h_L)
+
+combined_measurements['fuelload_100h_tonha'] = (combined_measurements$count_100h*
+                                                combined_measurements$x100h_coeff*
+                                                combined_measurements$slp_c*
+                                                k_value) / (combined_measurements$x100h_L)
+
+
+```
+
+
+####Calculate 1000-hour fuel loads
+
+```{r}
+# load = (k-value)(slope correction factor)(coefficient)(sum squared dbhs) / (transect length)
+combined_measurements['fuelload_1000s_tonha'] = (k_value*
+                                                   combined_measurements$slp_c*
+                                                   combined_measurements$x1000s_coeff*
+                                                   combined_measurements$sum_d2_s) / (combined_measurements$x1000h_L)
+
+combined_measurements['fuelload_1000r_tonha'] = (k_value*
+                                                   combined_measurements$slp_c*
+                                                   combined_measurements$x1000r_coeff*
+                                                   combined_measurements$sum_d2_r) / (combined_measurements$x1000h_L)
+
+
+```
+
+
+####Calculate Aggregate Loads
+
+```{r}
+combined_measurements['fuelload_1000h_tonha']= combined_measurements$fuelload_1000s_tonha+
+                                                combined_measurements$fuelload_1000r_tonha
+
+combined_measurements['fuelload_surface_tonha' ] = combined_measurements$fuelload_litter_tonha+
+                                                  combined_measurements$fuelload_1h_tonha+
+                                                  combined_measurements$fuelload_10h_tonha+
+                                                  combined_measurements$fuelload_100h_tonha+
+                                                  combined_measurements$fuelload_1000s_tonha+
+                                                  combined_measurements$fuelload_1000r_tonha
+
+combined_measurements['fuelload_total_tonha' ] = combined_measurements$fuelload_duff_tonha+
+                                                  combined_measurements$fuelload_litter_tonha+
+                                                  combined_measurements$fuelload_1h_tonha+
+                                                  combined_measurements$fuelload_10h_tonha+
+                                                  combined_measurements$fuelload_100h_tonha+
+                                                  combined_measurements$fuelload_1000s_tonha+
+                                                  combined_measurements$fuelload_1000r_tonha
+```
+
+
+##Write Output Tables
+
+```{r}
+# the full output includes the actual measurement data as well as intermediate values
+write.csv(combined_measurements, file=full_output_filename, row.names=FALSE)
+
+# the results output table includes only the plot_id, inv_date, azimuth, and fuel loads
+results_table = combined_measurements[,c('plot_id','inv_date','azimuth',
+                                         'fuelload_litter_tonha','fuelload_duff_tonha',
+                                         'fuelload_1h_tonha','fuelload_10h_tonha',
+                                         'fuelload_100h_tonha','fuelload_1000h_tonha',
+                                         'fuelload_1000s_tonha','fuelload_1000r_tonha',
+                                         'fuelload_surface_tonha','fuelload_total_tonha')]
+
+head(results_table)
+
+write.csv(results_table, file=results_output_filename, row.names=FALSE)
+
+```
+
+Users may wish to aggregate results by plot, year, stand, experimental group, etc. in their preferred data-management software.
+
+
+#Documentation
+
+This method for calculating fuel loads from Brown's transects (hereafter, the "method") was originally described in Stephens (2001). Specifically:
+
+"Surface and ground fuel loads were calculated by using appropriate equations developed for Sierra Nevada forests (van Wagtendonk et al. 1996, 1998). Coefficients required to calculate all surface and ground fuel loads were arithmetically weighted by the basal area fraction (percentage of total basal area by species) to produce accurate estimates of fuel loads (Jan van Wagtendonk, personal communication, 1999)." 
+
+Since then, the method has been used repeatedly in other publications, particularly those related to the Fire-Fire-Surrogate study at Blodgett Forest Reserach Station. *For example, see Stephens and Moghaddas (2005) and Stephens et al. (2012).* At some point, Jason Moghaddas constructed an excel workbook (with included macros) to facilitate use of the method for new datasets. 
+
+The current effort (2017) uses Moghaddas' implementation (and various publications for reference) to implement the method in R. The goal of this effort is to make the method more accessible, transparent, and reproducible for use in future research.
+
+##Background and References
+
+This method requires Brown's transect data and plot (or stand) level overstory data. Brown (1974) describes the widely used fuels transect sampling protocol and provides equations used to calculate fuel loads for woody debris from the transect samples. 
+
+The general idea is to refine the fuel load estimates by using overstory data to improve the accuracy of coefficents used in Brown's equations to calculate fuel loads from transect data. Specifically, QMD, SEC, and SG are coefficients which vary by the species that is the fuel source, and so better estimates can (presumably) be derived by using species-weighted-average values for QMD, SEC, and SG rather than using Brown's given values, which are generalized for entire regions. 
+
+**Note:** This implementation of the method assumes the user is working in the Sierra Nevada. Any species not included in the Van Wagtendonk et al. tables below is assigned their "All Species" value by default. Also, per the usage of Moghaddas' spreadsheet for previous studies, I have elected to include both live and dead trees in the basal-area calculations for the purposes of calculating fuel loads.
+
+This method breaks forest fuels into three main categories, each of which has a particular implementation for calculating the fuel load represented by transect samples.
+
+###Litter and Duff
+
+Litter and duff are measured as depths as specific points along a sampling transect. Van Wagtendonk (1998) developed regressions for litter, Duff, and combined-litter-and-duff loading (kg/$m^2$) as a function of depth (cm) for 19 different Sierra Nevada conifer species. 
+
+```{r}
+
+
+litterduff_coeffs
+
+```
+
+The fuel load represented by a depth measurement under a mixed-species overstory can be estimated using the equation
+
+$$F_{d,plot} = d * C_{plot}$$
+
+where
+
+$F_{d,plot}$ is the fuel load (in kg/$m^2$)
+
+$d$ is the depth of litter, duff, or litter and duff together (in cm) at some point along the transect. If depth was taken at multiple points along the transect, average them together to calculate *d*.
+
+$C_{plot}$ is the best estimate coefficient for the linear relationship between depth and fuel load for a fuel bed generated by the overstory present at *plot*
+
+We can calculate $C_{plot}$ by averaging together the different species-specific coefficients for each tree species contributing fuel to the plot, weighted by their local prevalence. Specifically, we weight each species' coefficient by the proportion of total basal area contributed by that species:
+
+$$C_{plot} = \sum_{spp}{[(\frac{BA_{spp}}{BA_{total}})*C_{spp}]}$$
+Where $C_{spp}$ is the species-specific coefficient for species *spp*, $C_{plot}$ is the best estimate multiple-species coefficient we will use to estimate the fuel load for transects taken in the plot. $BA_{spp}$ and $BA_{total}$ are the basal area occupied by species *spp* and the total overstory basal area (respectively) in the plot. $\frac{BA_{spp}}{BA_{total}}$ is proportion of the plot's basal area occupied by species *spp*. 
+
+This esimate of the fuel load represented by the transect can be averaged with other transects at the same plot (which will have the same value for $C_{plot}$, but different values for *d*) to generate plot-level estimates of fuel load, which can themselves be averaged to generate unit-level estimates of fuel load, depending on the user's statistical approach.
+
+###Fine Woody Debris: 1-hour, 10-hour, and 100-hour fuels
+
+Calculating fuel loads represented by transect counts of 1-hour, 10-hour, and 100-hour fuels is more complicated, but follows the same principle as described for litter and duff above. The different timelag classes (which correspond to size classes of 0.0-0.64cm, 0.64-2.54cm, and 2.54-7.62cm, respectively) must be calculated separately but in a common manner.
+
+Van Wagtendonk et al. (1996) give the equation (modified from Brown 1974):
+
+$$W = \frac{const*QMD*SEC*SLP*SG*n}{length}$$
+Where 
+
+$W$ is the estimated weight (in tons/acre, kg/ha, etc.) of fine woody debris size class *f* on the plot 
+
+$const$ is a constant composed of various unit conversion factors (e.g., to get to tons/acre in the end), described by some authers as *k*
+
+$QMD$ is the quadratic mean diameter of the fuels recorded in the transect
+
+$SEC$ is the correction for the nonhorizontal angle of the fuels
+
+$SLP$ is the slope correction factor, which allows corrected for the effect of a non-horizontal transect on the horizontal distance sampled
+
+$SG$ is the specific gravity of the fuels in the transect
+
+$n$ is the number of intercepts in the transect,
+
+and $length$ is the length of the transect. 
+
+Procedures for calculating these values are described below. QMD, SEC, and SG all vary by timelag classification, and so W is generally calculated individually for each timelag (1h, 10h, and 100h). 
+
+
+**Const (k-values)**
+
+Equation constant *k* ("const" in van Wagtendonk 1996 and Brown 1974) for sampled units and output units. These values for *k* are from van Wagner (1982), and these are used by forest service per Woodall and Williams (2008). The values given here are also in agreement with the Moghaddas spreadsheet.
+```{r}
+
+kvals
+```
+
+
+
+*QMD, SEC, and SG* vary by species and timelag classification of the fuel being totaled. Values for specific species/timelag for fine woody fuels are drawn from van Wagtendonk (1996): 
+
+**QMD**
+
+```{r}
+
+QMDcm
+```
+
+These constants are used in combination with overstory data to create an aggregate estimate of QMD, an average of the various species' QMD estimates (from Van Wagtendonk et al.) weighted by the proportion of stand basal area occupied by each species. See the following formula:
+
+$$QMD_{plot,timelag} = \sum_{species=spp}{PropBA_{spp,plot}*QMD_{spp,timelag}}$$
+Where $QMD_{plot}$ it the estimated quadratic mean diameter of fuels in the *timelag* class in the *plot* across all species
+
+$PropBA_{spp,plot}$ is the proportion of total basal area in *plot* occupied by the species *spp*, calculated from the measurement data
+
+$QMD_{spp,timelag}$ is the QMD of fuels in the *timelag* class for species *spp*, as estimated by Van Wagtendonk et al. 1996.
+
+**SEC**
+
+```{r}
+SEC
+```
+
+A propotion-BA-weighted average of SEC is generated in the same way as QMD above.
+
+**SG**
+
+Note that van Wagtendonk et al. found that "species was not significant for the 7.62+cm (3+ in) rotten fuels." and that the average specific gravity for rotten fuels was .36, which is here included as a value.
+
+```{r}
+SG
+
+```
+
+
+A propotion-BA-weighted average of SEC is generated in the same way as QMD above.
+
+**SLP** varies by the plot location and transect azimuth, $SLP = c = \sqrt{1+(\frac{percentslope}{100})^2}$ per Brown 1974. This is a simple adjustment for the influence of slope on transect length.
+
+**length** is the length of the sampling transect, and varies by the sampling protocol (which may vary from year-to-year) and the timelag class.
+
+
+**n** is the number of intersections of the given timeclass in the plane of the transect.
+
+
+###Coarse Woody Debris: 1000-hour fuels
+
+Brown 1974 gives:
+
+$$W_{1000h} = \frac{11.64*\sum{d^2}*s*a*c}{N*l}$$
+
+and notes: "For material 3 inches and larger, square the diameter of each intersected piece and sum the squared values ($\sum{d^2}$) for all pieces in the sampled area. Compute $\sum{d^2}$ separately for sound and rotten categories. To obtain weights or volumes for certain diameter ranges (3 to 9 inches, for examples), compute $\sum{d^2}$ for the specified range."
+
+Note that this equation is just a special case of the equations given above for 1-100 hour fuels. 11.64 is a unit conversion factor (*const* as above), *s* is the specific gravity of the fuel (*SG* as above), *a* is a value for the secant angle (*SEC* as above), and *c* is the slope correction factor (*SLP* as above). The difference is that instead of counted intercepts and an average squared quadratic mean diameter, we have the actual sum of squared diameters from the measurements directly. 
+
+(Note that *N* is the number of transects represented in the calculation, and is assumed to be 1 in this method. *l* is the transect length, as described above.) 
+
+For sound 1000-hour fuels, we can substitute the BA-weighted-average for a specific transect's overstory and re-arrange the equation:
+
+$$W_{1000S} = (\sum{d^2})*(\frac{const*SLP}{length})*\sum_{spp}{(\frac{BA_{spp}}{BA_{total}})*SEC_{spp,1000s})}*(\sum_{spp}{(\frac{BA_{spp}}{BA_{total}})*SG_{spp,1000s}})$$
+
+
+van Wagtendonk 1998 give single QMD, SEC, and SG values for both 1000-hour sound and 1000-hour rotten fuels. 
+
+Users who have diameter measurements for 1000-hour fuels (which is a standard sampling protocol) have actual diameter measurements, don't need the by-species QMD averages from Van Wagtendonk et al. (1996). 
+
+Van Wagtendonk et al. (1996) do not discuss sound vs. rotten 1000-hour fuels, stating only that "The average secant of the acute angle to the horizontal for the 7.62+ cm (3+in) size class for all species was 2.67 (Table 6)." However, actually referring to table six gives very different data, with by-species averages recorded and varying from 1.00 to 1.06, with an average of 1.02. I believe the text is in error (2.67 bears no resemblance to the data given in the table, but it is 7.62 reversed.) 
+
+For SG, "The average specific gravity for rotten fuels was .36." and "species was not significant for the 7.62+ cm (3+ in) rotten fuels." Specific gravities by species for sound 1000-hour fuels are given in Van Wagtendonk et al. (1996), Table 8. 
