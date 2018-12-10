@@ -26,7 +26,7 @@ litterduff_coeffs = data.frame(species=vw98_spp,spp=vw98_spp_code,litter_coeff=v
 
 vw96_spp = c("Abies concolor","Abies magnifica","Calocedrus decurrens","Juniperus occidentalis","Pinus albicaulis","Pinus attenuata","Pinus balfouriana","Pinus contorta","Pinus flexilis","Pinus jeffreyi","Pinus lambertiana","Pinus monophylla","Pinus monticola","Pinus ponderosa","Pinus sabiniana","Pinus washoensis","Pseudotsuga menziesii","Seguoiadendron giganteum","Tsuga mertensiana","All Species", "Other")
 
-vw96_spp_code = c("ABCO", "ABME", "CADE", "JUOC", "PIAL", "PIAT", "PIBA", "PICO", "PIFL", "PIJE", "PILA", "PIMO1", "PIMO2", "PIPO", "PISA", "PIWA", "PSME", "SEGI", "TSME", "ALLSPP", "OTHER")
+vw96_spp_code = c("ABCO", "ABMA", "CADE", "JUOC", "PIAL", "PIAT", "PIBA", "PICO", "PIFL", "PIJE", "PILA", "PIMO1", "PIMO2", "PIPO", "PISA", "PIWA", "PSME", "SEGI", "TSME", "ALLSPP", "OTHER")
 
 vw96_qmd_1h = c(0.08,0.10,0.09,0.08,0.13,0.10,0.12,0.10,0.21,0.15,0.12,0.09,0.08,0.23,0.14,0.22,0.06,0.14,0.05,0.12, 0.12)
 
@@ -81,3 +81,13 @@ kvals = data.frame(
   k = c(0.0001234,1.234,0.1234,1.234,0.008567,373.3,0.5348,11.65)
 )
 
+
+# species mapping table for ease of use
+species_codes =
+  merge(x = data.frame(species_code = vw96_spp_code,
+                       scientific_name = vw96_spp),
+        y = data.frame(species_code = vw98_spp_code,
+                       common_name = vw98_spp),
+        all = TRUE)
+
+species_codes

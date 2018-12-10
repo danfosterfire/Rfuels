@@ -86,19 +86,7 @@ Data import and validity testing
 
 ####Fuels Transects
 
-At a minimum, the transects data must include:
 
-**plot_id**: Plot ids must be unique plot identifiers. (E.g., if you have "stand A plot 1" and "stand B plot 1", you should relabel the plots as "A1" and "B1".) There may be multiple inventory dates per plot_id, or multiple transects sharing a plot_id. 
-
-**inv_date**: the date of measurement. There must be a 1:1 match between the dates of fuels measurements and dates of trees data. 
-
-**azimuth**: Identifier for individual transects within plots. Must be unique within a (plot_id:inv_date).
-
-**count_1h, count_10h, count_100h**: Transect counts of the number of intersections for 1-, 10-, and 100-hour fuels, respectively.
-
-**duff_depth and litter_depth**: Average depth of duff and litter on the transect. Users with multiple measurements per transect of litter and/or duff should average them together before import. Depths must be recorded in cm.
-
-**sum_d2_1000r and sum_d2_1000s**: The sum-of-squared-diameters for 1000-hour fuels on the transect, for rotten and sound fuels respectively. Users must aggregate their large fuels (1000-hour) into sound or rotten classes, and sum the squared diameters (in cm) for all 1000-s or 1000-r intersections on the transect.
 
 
 ```{r}
@@ -116,6 +104,7 @@ fuels.measurements['inv_date'] = as.Date(fuels.measurements$inv_date, '%m/%d/%Y'
 
 
 #
+
 ```
 
 
@@ -181,41 +170,7 @@ k_value = 1.234
 ####Using the treelist data, calculate the proportion of plot basal area occupied by each species
 
 ```{r}
-# Calculate basal area represented by each individual tree from the given DBH
-trees.measurements['basal_area'] = 0.00007854*(trees.measurements[,'dbh']**2)
 
-# Drop the dbh column
-trees.measurements = trees.measurements[,c('plot_id','inv_date','species','basal_area')]
-
-# sum up the basal area for species (within a plot_id:inv_date)
-overstory.long = aggregate(basal_area~species+plot_id+inv_date, data=trees.measurements, FUN=sum)
-
-# calculate the total basal area on each plot_id:inv_date for all species
-overstory.all = aggregate(basal_area~plot_id+inv_date, data=trees.measurements, FUN=sum)
-
-# relabel the total basal area column
-overstory.all['basal_area.all'] = overstory.all[,'basal_area']
-
-# for each (species:plot_id:inv_date), add a column for the total basal area (all species) on that plot_id:inv_date
-overstory.long = merge(x=overstory.long,
-                       y=overstory.all[,c('plot_id','inv_date','basal_area.all')],
-                       by=c('plot_id','inv_date'))
-
-# get the proportion of total plot_id:inv_date basal area represented by each species in the measurement
-overstory.long['pBA'] = overstory.long[,'basal_area']/overstory.long[,'basal_area.all']
-
-# switch from long to wide format, so that we wind up with one row per plot_id:inv_date
-# and columns for each species and all species
-overstory.molten = melt(overstory.long,
-                        id.vars = c('plot_id','inv_date','species'),
-                        measure.vars=c('pBA'))
-
-overstory.wide = dcast(overstory.molten,
-                       plot_id+inv_date~variable+species,
-                       margins=c('species'),
-                       fun.aggregate=sum)
-
-head(overstory.wide)
 
 ```
 
