@@ -171,17 +171,17 @@ import_fuels =
 #'   dates of trees data. (plot_id:inv_date) must uniquely identify a
 #'   sampling event in both the fuels and the trees data.}
 #'
-#'   \item{species}: A species identifier code for the individual tree.
+#'   \item{species}{A species identifier code for the individual tree.
 #'   Generally follows 4-letter scientific abbreviation format (e.g. Abies
 #'   concolor is "ABCO", not "WF", "White fir", "Abies_concolor", etc.).
 #'   Compare your species codes to those included in the Van Wagtendonk
 #'   constant tables (try "species_codes" in console) to ensure correct
 #'   matching. Note that singleleaf pinyon (Pinus monophylla) and western
 #'   white pine (Pinus monticola) would share the code "PIMO" - these should
-#'   be labeled "PIMO1" and "PIMO2", respectively.
+#'   be labeled "PIMO1" and "PIMO2", respectively.}
 #'
-#'   \item{dbh_cm}: The diameter at breast height (4.5', 1.37m) of the tree in
-#'   centimeters.
+#'   \item{dbh_cm}{The diameter at breast height (4.5', 1.37m) of the tree in
+#'   centimeters.}
 #' }
 #'
 #' @param trees_data The filepath to the .csv file containing the treelist.
