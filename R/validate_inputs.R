@@ -46,6 +46,7 @@
 #'   respectively. Users must aggregate their large fuels (1000-hour) into
 #'   sound or rotten classes, and sum the squared diameters (in cm) for all
 #'   1000-s or 1000-r intersections on the transect.}
+#' }
 #'
 #' Additionally, the .csv file may have a column for 'slope_percent', the
 #' slope (in percent) along the transect. Brown's equations include the
@@ -181,6 +182,7 @@ import_fuels =
 #'
 #'   \item{dbh_cm}: The diameter at breast height (4.5', 1.37m) of the tree in
 #'   centimeters.
+#' }
 #'
 #' @param trees_data The filepath to the .csv file containing the treelist.
 #'

@@ -1,12 +1,23 @@
 Package: Rfuels
-Title: What the Package Does (One Line, Title Case)
+Title: Estimate Fuel Loads from Brown's Transects for Sierra Nevada Conifers
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Danny",
+           family = "Foster",
            role = c("aut", "cre"),
-           email = "first.last@example.com")
-Description: What the package does (one paragraph).
-License: What license it uses
+           email = "danfoster@berkeley.edu")
+Description: This package includes code and supporting documentation for a 
+    method to calculate total fuel loads from Brown's transects
+    for Sierra Nevada tree species. This method was 
+    originally developed by Jason Moghaddas and Scott 
+    Stephens, and relies on the work of many others (see documentation). The 
+    purpose of this package is to implement the method in R for improved 
+    usability, repeatability, and clarity. The R implementation 
+    was developed by Danny Foster in 2017-2018, with financial support from the 
+    Baker-Bidwell Continuing Fellowship.
+License: GPL-3.0
 Encoding: UTF-8
 LazyData: true
+Imports:
+    reshape2 (>= 1.4.3)
+RoxygenNote: 6.1.1

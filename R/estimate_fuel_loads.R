@@ -1,8 +1,36 @@
 
 # TOP LEVEL FUNCTION -----------------------------------------------------------
 
-# top-level function to estimate fuel loads from browns transect data
-# and tree data
+#' Estimate fuel loads
+#'
+#' A top-level wrapper function to estimate fuel loads from Brown's
+#' transect data and a treelist describing the local
+#' overstory for each observation. For details, see the vignette.
+#'
+#' @param fuels_location The full file path to the .csv file with the Brown's
+#' transects data. See 'import_fuels()' for more info.
+#'
+#' @param treelist_location The full file path to the .csv file with the
+#' treelist data. See 'import_treelist()' for more info.
+#'
+#' @param results_type Either 'full', 'results_only', or 'fuels_only'. Sets the
+#' verbosity of the returned results dataframe. 'full' includes observation
+#' ID information, all directly observed values, intermediate calculations,
+#' overstory species composition, and the fuel load estimates.
+#' 'results_only' returns the observation ID
+#' information, the overstory species composition, and the fuel load estimates.
+#' 'fuels_only' returns the observation ID information and the fuel load
+#' estimates.
+#'
+#' @return A tidy data frame, with a row for each observation (where an
+#' observation is a Brown's transect on a specific date), and columns for
+#' the plot location (plot_id), the inventory date (inv_date), the transect
+#' azimuth (azimuth), and the fuel load estimated for various subcategories
+#' of surface and ground fuels (litter, duff, 1-hour, 10-hour, 100-hour, and
+#' 1000-hour fuels). Users may opt to include columns for the directly observed
+#' measurements, intermediate values, and the overstory species composition
+#' using the parameter 'results_type'.
+#'
 estimate_fuel_loads =
 
   function(fuels_location,
@@ -169,6 +197,24 @@ estimate_fuel_loads =
 
 # litter and duff loads --------------------------------------------------------
 
+#' Estimate litter and duff fuel loads
+#'
+#' Litter and duff are measured as depths at specific points along a sampling
+#' transect. Van WAgtendonk et al. (1998) developed regressions for litter,
+#' duff, and combined-litter-and-duff loading (kg / m^2) as a function of
+#' depth (cm) for 19 different Sierra Nevada conifer species. See vignette
+#' for details.
+#'
+#' @param dataset A tidy data frame with a row for each observation, and
+#' columns for the observed litter or duff depth (in cm) and the observation-
+#' specific coefficient between litter/duff depth and fuel load. The
+#' observation-specific coefficient is given by get_litterduff_coeffs()
+#'
+#' @param fuel_type A string, either 'litter', or 'duff'.
+#'
+#' @return A numeric vector giving the estimated fuel loading (in Mg / ha) of
+#' either litter or duff represented by the observed litter / duff depth on the
+#' transect.
 estimate_litterduff_load = function(dataset, fuel_type){
 
   # fuel_type must be either 'litter' or 'duff'
@@ -193,6 +239,35 @@ estimate_litterduff_load = function(dataset, fuel_type){
 
 # 1-h, 10-h, and 100-h loads ---------------------------------------------------
 
+#' Estimate fine woody debris (1-hour, 10-hour, and 100-hour) fuel loads
+#'
+#' Fine woody debris is measured as tallies by timelag classification along
+#' a transect. The timelag classifications are 1-hour (0 - 0.64cm diameter),
+#' 10-hour (0.64 - 2.54 cm diameter), and 100-hour (2.54 - 7.63 cm diameter).
+#' Van WAgtendonk et al. (1996) and Brown (1974) give equations to estimate
+#' the fuel load (weight / area) represented by these tallies. For more details,
+#' see the vignette.
+#'
+#' @param dataset A tidy data frame with a row for each observation, and
+#' columns for the observed fine woody debris counts and the observation-
+#' specific fuel coefficient. The
+#' observation-specific coefficient is given by get_fwd_coeffs(), and
+#' depends on the average quadratic mean diameter, secant of acute angle, and
+#' specific gravity of the various species present in the overstory.
+#'
+#' @param timelag_class A string, either 'x1h', 'x10h', or 'x100h'. Describes
+#' which columns to read and write.
+#'
+#' @param k_value Currentlly k_value must equalt 1.234. This is a
+#' unit-conversion constant to relate the units of the observation data
+#' (transect lengths, square centimeters of cross-sectional area per transect)
+#' to the desired results units (metric tons per hectare). Brown's equations
+#' allow for a variety of input and output unit types, with different k values
+#' to translate between them. However, this code currently requires that all
+#' input and output values be in metric - see import_fuels() for more details.
+#'
+#' @return A numeric vector giving the estimated fuel loading (in Mg / ha) of
+#' the fine woody fuel represented by the tallied amount on the transect.
 estimate_fwd_load = function(dataset, timelag_class, k_value){
 
   # timelag_class must be either 'x1h', 'x10h', or 'x100h'
@@ -218,6 +293,37 @@ estimate_fwd_load = function(dataset, timelag_class, k_value){
 
 # 1000-hour loads --------------------------------------------------------------
 
+#' Estimate coarse woody debris (1000-hour) fuel loads
+#'
+#' Coarse woody debris is measured by recording the diameter and decay class
+#' of all 1000-hour fuels (7.63+ cm in diameter).
+#' Van WAgtendonk et al. (1996) and Brown (1974) give equations to estimate
+#' the fuel load (weight / area) represented by these data. For more details,
+#' see the vignette.
+#'
+#' @param dataset A tidy data frame with a row for each observation, and
+#' columns for the sum of squared diamters for all sound and rotten 1000-hour
+#' fuels along the transect, and the observation-specific fuel coefficients. The
+#' observation-specific coefficients are given by get_1000h_coeffs(), and
+#' depend on the average secant of acute angle and
+#' specific gravity of the various species present in the overstory. Because
+#' the observed data include the sum of squared diameters of intersecting fuels,
+#' we don't need to estimate the quadratic mean diameter of the 1000-hour fuels.
+#'
+#' @param type A string, either 'rotten' or 'sound' decribing which
+#' values to read and write.
+#'
+#' @param k_value Currentlly k_value must equalt 1.234. This is a
+#' unit-conversion constant to relate the units of the observation data
+#' (transect lengths, square centimeters of cross-sectional area per transect)
+#' to the desired results units (metric tons per hectare). Brown's equations
+#' allow for a variety of input and output unit types, with different k values
+#' to translate between them. However, this code currently requires that all
+#' input and output values be in metric - see import_fuels() for more details.
+#'
+#' @return A numeric vector giving the estimated fuel loading (in Mg / ha) of
+#' the coarse woody debris represented by the observed sum of squared
+#' diameters on the transect.
 estimate_cwd_load = function(dataset, type, k_value){
 
   # type must be either rotten or sound
