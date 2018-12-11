@@ -112,7 +112,7 @@ get_litterduff_coeffs =
     # create an empty vector to store the weighted coefficients
     weighted_coeffs = numeric(nrows)
 
-    # 'target' must be either 'litter' or 'duff', else fail with an error
+    # 'fuel_type' must be either 'litter' or 'duff', else fail with an error
     if ((fuel_type != 'litter_coeff') & (fuel_type != 'duff_coeff')) {
       error('"fuel_type" must be either "litter" or "duff"!')
     }

@@ -32,7 +32,7 @@
 #'   called to extend 1000-hour transects until at least one intersection was
 #'   found.}
 #'
-#'   \item{count_1h, count_10h, count_100h}{Integers greater than or
+#'   \item{count_x1h, count_x10h, count_x100h}{Integers greater than or
 #'   equal to 0. Transect counts of the number of intersections for 1-, 10-,
 #'   and 100-hour fuels, respectively.}
 #'
@@ -74,7 +74,7 @@ import_fuels =
     necessary_columns =
       c('plot_id','inv_date','azimuth',
         'x1h_length_m', 'x10h_length_m', 'x100h_length_m', 'x1000h_length_m',
-        'count_1h', 'count_10h','count_100h',
+        'count_x1h', 'count_x10h','count_x100h',
         'duff_depth_cm','litter_depth_cm','sum_d2_1000r_cm2','sum_d2_1000s_cm2')
 
     # if the file doesn't have all the necessary columns, throw an error
@@ -100,12 +100,12 @@ import_fuels =
       as.numeric(as.character(fuels_data[,'x100h_length_m']))
     fuels_data[,'x1000h_length_m'] =
       as.numeric(as.character(fuels_data[,'x1000h_length_m']))
-    fuels_data[,'count_1h'] =
-      as.integer(as.character(fuels_data[,'count_1h']))
-    fuels_data[,'count_10h'] =
-      as.integer(as.character(fuels_data[,'count_10h']))
-    fuels_data[,'count_100h'] =
-      as.integer(as.character(fuels_data[,'count_100h']))
+    fuels_data[,'count_x1h'] =
+      as.integer(as.character(fuels_data[,'count_x1h']))
+    fuels_data[,'count_x10h'] =
+      as.integer(as.character(fuels_data[,'count_x10h']))
+    fuels_data[,'count_x100h'] =
+      as.integer(as.character(fuels_data[,'count_x100h']))
     fuels_data[,'duff_depth_cm'] =
       as.numeric(as.character(fuels_data[,'duff_depth_cm']))
     fuels_data[,'litter_depth_cm'] =
@@ -118,7 +118,7 @@ import_fuels =
     # check for negative values, and if found, throw an error
     if (min(fuels_data[,c('x1h_length_m', 'x10h_length_m',
                           'x100h_length_m', 'x1000h_length_m',
-                          'count_1h','count_10h','count_100h',
+                          'count_x1h','count_x10h','count_x100h',
                           'duff_depth_cm','litter_depth_cm',
                           'sum_d2_1000r_cm2','sum_d2_1000r_cm2')]) < 0){
       stop('Negative counts, depths, or diameters found. Clean up source .csv
@@ -134,8 +134,8 @@ import_fuels =
 
     } else {
 
-      # if there is not a slope column, we set slp_c to 0
-      fuels_data[,'slp_c'] = 0
+      # if there is not a slope column, we set slp_c to 1
+      fuels_data[,'slp_c'] = 1
 
     }
 

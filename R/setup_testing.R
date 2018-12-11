@@ -79,3 +79,8 @@ head(test_x1000r_coeffs)
 
 head(test_dataset)
 
+test_entire = estimate_fuel_loads(fuels_location = here::here('example_fuels.csv'),
+                                  treelist_location = here::here('example_trees.csv'),
+                                  results_type = 'full')
+
+help(import_fuels)
