@@ -90,4 +90,11 @@ species_codes =
                        common_name = vw98_spp),
         all = TRUE)
 
-species_codes
+usethis::use_data_raw()
+usethis::use_data(kvals,
+                  litterduff_coeffs,
+                  QMDcm,
+                  SEC,
+                  SG,
+                  species_codes,
+                  overwrite = TRUE)

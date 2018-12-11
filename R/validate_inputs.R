@@ -24,6 +24,14 @@
 #'   transects within plots. Must be unique within a (plot_id:inv_date). Will
 #'   be coerced to character.}
 #'
+#'   \item{x1h_length_m, x10h_length_m, x100h_length_m, x1000h_length_m}{Numeric(s)
+#'   greater than 0. The length (in meters) of the sampling transects for 1-hour,
+#'   10-hour, 100-hour, and 1000-hour fuels, respectively.
+#'   Transect lengths may vary by plot_id
+#'   and/or year, for example if sampling protocols changed over time or
+#'   called to extend 1000-hour transects until at least one intersection was
+#'   found.}
+#'
 #'   \item{count_1h, count_10h, count_100h}{Integers greater than or
 #'   equal to 0. Transect counts of the number of intersections for 1-, 10-,
 #'   and 100-hour fuels, respectively.}
@@ -38,6 +46,13 @@
 #'   respectively. Users must aggregate their large fuels (1000-hour) into
 #'   sound or rotten classes, and sum the squared diameters (in cm) for all
 #'   1000-s or 1000-r intersections on the transect.}
+#'
+#' Additionally, the .csv file may have a column for 'slope_percent', the
+#' slope (in percent) along the transect. Brown's equations include the
+#' option to correct for the slope effect on horizontal length of transects.
+#' Keep in mind that this correction factor applies to the transect slope,
+#' not the plot slope. If a slope_percent is not supplied, we set the slope
+#' correction factor to 1 (no slope).
 #'
 #' @param fuels_data The filepath to the .csv file containing the observations
 #' from the Brown's transects for surface fuels.
@@ -57,7 +72,9 @@ import_fuels =
 
     # these are the necessary columns
     necessary_columns =
-      c('plot_id','inv_date','azimuth', 'count_1h', 'count_10h','count_100h',
+      c('plot_id','inv_date','azimuth',
+        'x1h_length_m', 'x10h_length_m', 'x100h_length_m', 'x1000h_length_m',
+        'count_1h', 'count_10h','count_100h',
         'duff_depth_cm','litter_depth_cm','sum_d2_1000r_cm2','sum_d2_1000s_cm2')
 
     # if the file doesn't have all the necessary columns, throw an error
@@ -75,6 +92,14 @@ import_fuels =
       as.Date(fuels_data[,'inv_date'], '%m/%d/%Y')
     fuels_data[,'azimuth'] =
       as.integer(as.character(fuels_data[,'azimuth']))
+    fuels_data[,'x1h_length_m'] =
+      as.numeric(as.character(fuels_data[,'x1h_length_m']))
+    fuels_data[,'x10h_length_m'] =
+      as.numeric(as.character(fuels_data[,'x10h_length_m']))
+    fuels_data[,'x100h_length_m'] =
+      as.numeric(as.character(fuels_data[,'x100h_length_m']))
+    fuels_data[,'x1000h_length_m'] =
+      as.numeric(as.character(fuels_data[,'x1000h_length_m']))
     fuels_data[,'count_1h'] =
       as.integer(as.character(fuels_data[,'count_1h']))
     fuels_data[,'count_10h'] =
@@ -91,11 +116,27 @@ import_fuels =
       as.numeric(as.character(fuels_data[,'sum_d2_1000s_cm2']))
 
     # check for negative values, and if found, throw an error
-    if (min(fuels_data[,c('count_1h','count_10h','count_100h',
+    if (min(fuels_data[,c('x1h_length_m', 'x10h_length_m',
+                          'x100h_length_m', 'x1000h_length_m',
+                          'count_1h','count_10h','count_100h',
                           'duff_depth_cm','litter_depth_cm',
                           'sum_d2_1000r_cm2','sum_d2_1000r_cm2')]) < 0){
       stop('Negative counts, depths, or diameters found. Clean up source .csv
            file.')
+    }
+
+    # check for a slope column
+    if (is.element('slope_percent', names(fuels_data))) {
+
+      # if there is a slope column, make slp_c (the correction factor) based on
+      # the slope
+      fuels_data[,'slp_c'] = sqrt(1+((fuels_data[,'percent_slope']/100)^2))
+
+    } else {
+
+      # if there is not a slope column, we set slp_c to 0
+      fuels_data[,'slp_c'] = 0
+
     }
 
     # return the data frame

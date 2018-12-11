@@ -24,7 +24,45 @@ estimate_fuel_loads =
             by = c('plot_id', 'inv_date'),
             all.y = TRUE) # we may have multiple fuels transects per plot_id
 
-    # calculate fuels coefficients
+    # get the list of tree species included in the dataset
+    species_present = get_spp_codes(overstory)
+
+    # calculate fuels coefficients based on the overstory species composition
+    combined_data[,'litter_coeff'] =
+      get_litterduff_coeffs(dataset = combined_data,
+                            species_list = species_present,
+                            target = 'litter_coeff')
+
+    combined_data[,'duff_coeff'] =
+      get_litterduff_coeffs(dataset = combined_data,
+                            species_list = species_present,
+                            target = 'duff_coeff')
+
+    combined_data[,'x1h_coeff'] =
+      get_fwd_coeffs(dataset = combined_data,
+                     species_list = species_present,
+                     target = 'x1h')
+
+    combined_data[,'x10h_coeff'] =
+      get_fwd_coeffs(dataset = combined_data,
+                     species_list = species_present,
+                     target = 'x10h')
+
+    combined_data[,'x100h_coeff'] =
+      get_fwd_coeffs(dataset = combined_data,
+                     species_list = species_present,
+                     target = 'x100h')
+
+    combined_data[,'x1000s_coeff'] =
+      get_1000h_coeffs(dataset = combined_data,
+                       species_list = species_present,
+                       type = 'sound')
+
+    combined_data[,'x1000r_coeff'] =
+      get_1000h_coeffs(dataset = combined_data,
+                       species_list = species_present,
+                       type = 'rotten')
+
 
     # calculate fuel loads
 
