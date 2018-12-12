@@ -34,7 +34,7 @@ diameters on the transect.
 }
 \description{
 Coarse woody debris is measured by recording the diameter and decay class
-of all 1000-hour fuels (7.63+ cm in diameter).
+of all 1000-hour fuels (7.62+ cm in diameter).
 Van WAgtendonk et al. (1996) and Brown (1974) give equations to estimate
 the fuel load (weight / area) represented by these data. For more details,
 see the vignette.

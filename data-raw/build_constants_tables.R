@@ -76,8 +76,8 @@ SG = data.frame(species=vw96_spp,spp=vw96_spp_code,x1h=vw96_sg_1h,x10h=vw96_sg_1
 kvals = data.frame(
   fuel_diam = c("cm","cm","cm","cm","in","in","in","in"),
   transect_length = c("m","m","m","m","ft","ft","ft","ft"),
-  volume_fuel_per_area = c("m^3/m^2","m^3/ha",NA,NA,"ft^3/ft^2","ft^3/ac",NA,NA),
-  weight_fuel_per_area = c(NA,NA,"kg/m^2","tons/ha",NA,NA,"lb/ft^2","tons/ac"),
+  volume_fuel_per_area = c("m^3^/m^2^","m^3^/ha",NA,NA,"ft^3^/ft^2^","ft^3^/ac",NA,NA),
+  weight_fuel_per_area = c(NA,NA,"kg/m^2^","tons/ha",NA,NA,"lb/ft^2^","tons/ac"),
   k = c(0.0001234,1.234,0.1234,1.234,0.008567,373.3,0.5348,11.65)
 )
 

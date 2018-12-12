@@ -32,7 +32,7 @@ the fine woody fuel represented by the tallied amount on the transect.
 \description{
 Fine woody debris is measured as tallies by timelag classification along
 a transect. The timelag classifications are 1-hour (0 - 0.64cm diameter),
-10-hour (0.64 - 2.54 cm diameter), and 100-hour (2.54 - 7.63 cm diameter).
+10-hour (0.64 - 2.54 cm diameter), and 100-hour (2.54 - 7.62 cm diameter).
 Van WAgtendonk et al. (1996) and Brown (1974) give equations to estimate
 the fuel load (weight / area) represented by these tallies. For more details,
 see the vignette.

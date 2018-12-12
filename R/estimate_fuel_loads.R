@@ -243,7 +243,7 @@ estimate_litterduff_load = function(dataset, fuel_type){
 #'
 #' Fine woody debris is measured as tallies by timelag classification along
 #' a transect. The timelag classifications are 1-hour (0 - 0.64cm diameter),
-#' 10-hour (0.64 - 2.54 cm diameter), and 100-hour (2.54 - 7.63 cm diameter).
+#' 10-hour (0.64 - 2.54 cm diameter), and 100-hour (2.54 - 7.62 cm diameter).
 #' Van WAgtendonk et al. (1996) and Brown (1974) give equations to estimate
 #' the fuel load (weight / area) represented by these tallies. For more details,
 #' see the vignette.
@@ -296,7 +296,7 @@ estimate_fwd_load = function(dataset, timelag_class, k_value){
 #' Estimate coarse woody debris (1000-hour) fuel loads
 #'
 #' Coarse woody debris is measured by recording the diameter and decay class
-#' of all 1000-hour fuels (7.63+ cm in diameter).
+#' of all 1000-hour fuels (7.62+ cm in diameter).
 #' Van WAgtendonk et al. (1996) and Brown (1974) give equations to estimate
 #' the fuel load (weight / area) represented by these data. For more details,
 #' see the vignette.

@@ -21,3 +21,7 @@ LazyData: true
 Imports:
     reshape2 (>= 1.4.3)
 RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

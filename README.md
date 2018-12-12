@@ -5,11 +5,8 @@ Scripts and documentation for estimating Sierra Nevadan surface fuels from Brown
 
 ### implement testing with the example data against fixed results of a by-excel calc
 
-### complete and update function documentation
+### complete and update function documentation (done except for examples)
 #### add examples
-
-
-### transcribe / update 'background' section of vignette
 
 ### write an example use section for vignette
 
