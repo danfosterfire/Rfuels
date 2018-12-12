@@ -114,7 +114,7 @@ get_litterduff_coeffs =
 
     # 'fuel_type' must be either 'litter' or 'duff', else fail with an error
     if ((fuel_type != 'litter_coeff') & (fuel_type != 'duff_coeff')) {
-      error('"fuel_type" must be either "litter" or "duff"!')
+      stop('"fuel_type" must be either "litter" or "duff"!')
     }
 
     # for each row in the combined measurements table
@@ -199,7 +199,7 @@ get_fwd_coeffs =
 
     # timelag class must be one of 'x1h', 'x10h', or 'x100h'
     if (!is.element(timelag_class, c('x1h', 'x10h', 'x100h'))) {
-      error('timelag_class must be one of "x1h", "x10h", or "x100h"!')
+      stop('timelag_class must be one of "x1h", "x10h", or "x100h"!')
     }
 
     # for each row in the dataset
@@ -302,7 +302,7 @@ get_1000h_coeffs =
 
     # type must be either 'rotten' or 'sound'
     if (!is.element(type, c('rotten', 'sound'))){
-      error('type must be either "rotten" or "sound"!')
+      stop('type must be either "rotten" or "sound"!')
     }
 
     # if 'type' is 'sound:

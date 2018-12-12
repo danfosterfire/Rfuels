@@ -7,7 +7,7 @@
 import_fuels(file_path)
 }
 \arguments{
-\item{fuels_data}{The filepath to the .csv file containing the observations
+\item{file_path}{The filepath to the .csv file containing the observations
 from the Brown's transects for surface fuels.}
 }
 \value{

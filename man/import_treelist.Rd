@@ -7,7 +7,7 @@
 import_treelist(file_path)
 }
 \arguments{
-\item{trees_data}{The filepath to the .csv file containing the treelist.}
+\item{file_path}{The filepath to the .csv file containing the treelist.}
 }
 \value{
 A tidy dataframe with the treelist. This is primarily
