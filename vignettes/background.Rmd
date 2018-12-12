@@ -15,13 +15,6 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-load(here::here('data/kvals.rda'))
-load(here::here('data/litterduff_coeffs.rda'))
-load(here::here('data/QMDcm.rda'))
-load(here::here('data/SEC.rda'))
-load(here::here('data/SG.rda'))
-load(here::here('data/species_codes.rda'))
-
 ```
 
 #Introduction
@@ -80,7 +73,7 @@ combined-litter-and-duff loading (kg/$m^2$) as a function of depth (cm) for 19
 different Sierra Nevada conifer species: 
 
 ```{r echo = FALSE}
-knitr::kable(litterduff_coeffs,
+knitr::kable(Rfuels:::litterduff_coeffs,
              caption = 'Van Wagtendonk et al. (1998) Table 7: Regression statistics for litter, duff, and litter and duff weight (kg m-2) as a function of their respective depths (cm) for 19 Sierra Nevada conifers')
 ```
 
@@ -171,7 +164,7 @@ sampled units and output units. These values for *k* are from van Wagner
 (These values are also consistent with Moghaddas' work.)
 
 ```{r echo = FALSE}
-knitr::kable(kvals,
+knitr::kable(Rfuels:::kvals,
              caption = 'Van Wagner (1982) Table 1: Equation constant k for some length, volume, and weight units in line intersect sampling')
 ```
 
@@ -184,7 +177,7 @@ from van Wagtendonk (1996).
 ###QMD (Quadratic mean diameter in centimeters)
 
 ```{r echo = FALSE}
-knitr::kable(QMDcm,
+knitr::kable(Rfuels:::QMDcm,
              caption = 'Van Wagtendonk et al. (1996) Table 3: Average squared quadratic mean diameter by fuel size class for 19 Sierra Nevada conifers')
 ```
 
@@ -206,7 +199,7 @@ Where
 ###SEC (secant of acute angle)
 
 ```{r echo = FALSE}
-knitr::kable(SEC,
+knitr::kable(Rfuels:::SEC,
              caption = 'Van Wagtendonk et al. (1996) Table 6: Average secant of acute angles of inclination of nonhorizontal particles by fuel size class for 19 Sierra Nevada conifers')
 ```
 
@@ -219,7 +212,7 @@ Note that van Wagtendonk et al. found that "species was not significant for the
 fuels was .36, which is here included as a value.
 
 ```{r echo = FALSE}
-knitr::kable(SG,
+knitr::kable(Rfuels:::SG,
              caption = 'Van Wagtendonk et al. (1996) Table 8: Average specific gravity by fuel size class for 19 Sierra Nevada conifers')
 ```
 

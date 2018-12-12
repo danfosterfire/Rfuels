@@ -55,7 +55,7 @@
 #' not the plot slope. If a slope_percent is not supplied, we set the slope
 #' correction factor to 1 (no slope).
 #'
-#' @param fuels_data The filepath to the .csv file containing the observations
+#' @param file_path The filepath to the .csv file containing the observations
 #' from the Brown's transects for surface fuels.
 #'
 #' @return A tidy dataframe with the observed fuels data. This is primarily
@@ -69,7 +69,8 @@ import_fuels =
   function(file_path){
 
     # load the file
-    fuels_data = read.csv(file_path)
+    fuels_data = utils::read.csv(file_path,
+                          stringsAsFactors = TRUE)
 
     # these are the necessary columns
     necessary_columns =
@@ -184,7 +185,7 @@ import_fuels =
 #'   centimeters.}
 #' }
 #'
-#' @param trees_data The filepath to the .csv file containing the treelist.
+#' @param file_path The filepath to the .csv file containing the treelist.
 #'
 #' @return A tidy dataframe with the treelist. This is primarily
 #' a validation function - the format and meaning of the data frame should
@@ -197,7 +198,8 @@ import_treelist =
   function(file_path){
 
     # load the file
-    trees_data = read.csv(file_path)
+    trees_data = utils::read.csv(file_path,
+                          stringsAsFactors = TRUE)
 
     # these are the necessary columns
     necessary_columns =
@@ -301,12 +303,12 @@ aggregate_treelist =
 
     # sum the basal area for each species within each observation
     # (plot_id:inv_date)
-    overstory.long = aggregate(data = treelist,
+    overstory.long = stats::aggregate(data = treelist,
                                ba_m2 ~ species + plot_id + inv_date,
                                FUN = sum)
 
     # calculate the total basalarea for each observation
-    overstory.all = aggregate(data = treelist,
+    overstory.all = stats::aggregate(data = treelist,
                               ba_m2 ~ plot_id + inv_date,
                               FUN = sum)
 

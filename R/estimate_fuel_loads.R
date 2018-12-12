@@ -220,7 +220,7 @@ estimate_litterduff_load = function(dataset, fuel_type){
 
   # fuel_type must be either 'litter' or 'duff'
   if (!is.element(fuel_type, c('litter', 'duff'))){
-    error('fuel_type must be either "litter" or "duff"')
+    stop('fuel_type must be either "litter" or "duff"')
   }
 
   # load =
@@ -273,7 +273,7 @@ estimate_fwd_load = function(dataset, timelag_class, k_value){
 
   # timelag_class must be either 'x1h', 'x10h', or 'x100h'
   if (!is.element(timelag_class, c('x1h','x10h','x100h'))){
-    error('timelag_class must be either "x1h", "x10h", or "x100h"')
+    stop('timelag_class must be either "x1h", "x10h", or "x100h"')
   }
 
   # load =
@@ -329,7 +329,7 @@ estimate_cwd_load = function(dataset, type, k_value){
 
   # type must be either rotten or sound
   if (!is.element(type, c('rotten', 'sound'))){
-    error('type must be either "rotten" or "sound"')
+    stop('type must be either "rotten" or "sound"')
   }
 
   # load = (coefficient * sum of squared dbhs * k_value * slope correction) /

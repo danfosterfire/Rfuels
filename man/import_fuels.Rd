@@ -56,7 +56,7 @@ at least these columns:
   measurements per transect of litter and/or duff should average them
   together before import. Depths must be recorded in cm.}
 
-\item{sum_d2_1000r and sum_d2_1000s}{The sum-of-squared-diameters
+\item{sum_d2_1000r_cm2 and sum_d2_1000s_cm2}{The sum-of-squared-diameters
   for 1000-hour fuels on the transect, for rotten and sound fuels
   respectively. Users must aggregate their large fuels (1000-hour) into
   sound or rotten classes, and sum the squared diameters (in cm) for all

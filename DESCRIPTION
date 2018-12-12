@@ -19,9 +19,11 @@ License: GPL-3.0
 Encoding: UTF-8
 LazyData: true
 Imports:
-    reshape2 (>= 1.4.3)
+    reshape2 (>= 1.4.3),
+    here (>= 0.1)
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat
 VignetteBuilder: knitr

@@ -90,6 +90,7 @@ species_codes =
                        common_name = vw98_spp),
         all = TRUE)
 
+# add these data objects to the package file structure
 usethis::use_data_raw()
 usethis::use_data(kvals,
                   litterduff_coeffs,
