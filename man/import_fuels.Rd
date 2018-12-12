@@ -70,6 +70,3 @@ Keep in mind that this correction factor applies to the transect slope,
 not the plot slope. If a slope_percent is not supplied, we set the slope
 correction factor to 1 (no slope).
 }
-\examples{
-
-}

@@ -62,7 +62,6 @@
 #' a validation function - the format and meaning of the data frame should
 #' match that of the import file.
 #'
-#' @examples
 #'
 import_fuels =
 
@@ -190,8 +189,6 @@ import_fuels =
 #' @return A tidy dataframe with the treelist. This is primarily
 #' a validation function - the format and meaning of the data frame should
 #' match that of the import file.
-#'
-#' @examples
 #'
 import_treelist =
 

@@ -50,6 +50,3 @@ tree, and at least these columns:
   centimeters.}
 }
 }
-\examples{
-
-}
