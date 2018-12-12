@@ -31,6 +31,7 @@
 #' measurements, intermediate values, and the overstory species composition
 #' using the parameter 'results_type'.
 #'
+#' @export
 estimate_fuel_loads =
 
   function(fuels_location,

@@ -97,4 +97,5 @@ usethis::use_data(kvals,
                   SEC,
                   SG,
                   species_codes,
-                  overwrite = TRUE)
+                  overwrite = TRUE,
+                  internal = TRUE)
