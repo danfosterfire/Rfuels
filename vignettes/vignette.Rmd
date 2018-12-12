@@ -1,10 +1,10 @@
 ---
-title: "Background and References"
+title: "Rfuels Vignette"
 author: "Danny Foster"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Background}
+  %\VignetteIndexEntry{Rfuels_vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,7 +17,11 @@ knitr::opts_chunk$set(
 
 ```
 
-#Introduction
+#Using Rfuels
+
+
+
+#Background Information
 
 This method for calculating fuel loads from Brown's transects was originally 
 described in Stephens (2001). Specifically:
@@ -65,7 +69,7 @@ This method breaks forest fuels into three main categories, each of which has a
 particular implementation for calculating the fuel load represented by transect 
 samples.
 
-#Litter and Duff
+##Litter and Duff
 
 Litter and duff are measured as depths as specific points along a sampling 
 transect. Van Wagtendonk (1998) developed regressions for litter, Duff, and 
@@ -119,7 +123,7 @@ $Coeff_{plot}$, but different values for *d*) to generate plot-level
 estimates of fuel load, which can themselves be averaged to generate unit-level 
 estimates of fuel load, depending on the user's study design.
 
-#Fine Woody Debris: 1-hour, 10-hour, and 100-hour fuels
+##Fine Woody Debris: 1-hour, 10-hour, and 100-hour fuels
 
 Calculating fuel loads represented by transect counts of 1-hour, 10-hour, and 
 100-hour fuels is more complicated, but follows the same principle as described 
@@ -156,7 +160,7 @@ Procedures for calculating these values are described below. *QMD*, *SEC*, and
 *SG* all vary by timelag classification, and so *W* is calculated 
 individually for each timelag (1h, 10h, and 100h).
 
-##Const (k-values)
+###Const (k-values)
 
 Equation constant *k* ("const" in van Wagtendonk 1996 and Brown 1974) for 
 sampled units and output units. These values for *k* are from van Wagner 
@@ -168,13 +172,13 @@ knitr::kable(Rfuels:::kvals,
              caption = 'Van Wagner (1982) Table 1: Equation constant k for some length, volume, and weight units in line intersect sampling')
 ```
 
-##QMD, SEC, and SG 
 
-These values vary by species and timelag classification of the fuel being 
-totaled. Values for specific species/timelag for fine woody fuels are drawn 
-from van Wagtendonk (1996).
 
 ###QMD (Quadratic mean diameter in centimeters)
+
+QMD, SEC, and SG vary by species and timelag classification of the fuel being 
+totaled. Values for specific species/timelag for fine woody fuels are drawn 
+from van Wagtendonk (1996).
 
 ```{r echo = FALSE}
 knitr::kable(Rfuels:::QMDcm,
@@ -218,23 +222,23 @@ knitr::kable(Rfuels:::SG,
 
 A propotion-BA-weighted average of SEC is generated in the same way as QMD above.
 
-##SLP (slope correction factor)
+###SLP (slope correction factor)
 
 *SLP* varies by the plot location and transect 
 azimuth, $SLP = c = \sqrt{1+(\frac{percentslope}{100})^2}$ per Brown 1974. 
 This is a simple adjustment for the influence of slope on transect length.
 
-##length 
+###length 
 
 *length* is the length of the sampling transect, and varies by the sampling 
 protocol (which may vary from year-to-year) and the timelag class.
 
-##n 
+###n 
 
 *n* is the number of intersections of the given timeclass in the plane of the 
 transect.
 
-#Coarse Woody Debris: 1000-hour fuels
+##Coarse Woody Debris: 1000-hour fuels
 
 Brown (1974) gives:
 
