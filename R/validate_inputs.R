@@ -82,8 +82,19 @@ validate_fuels =
            for more information.')
     }
 
+    # test whether the counts are integers
+    if (!is.integer(fuels_data[,'count_x1h']) |
+        !is.integer(fuels_data[,'count_x10h']) |
+        !is.integer(fuels_data[,'count_x100h'])) {
+
+      # if not, throw an error
+      stop('
+      Some of the counts are not integers! Check fuels data.
+           ')
+    }
+
     # coerce column classes; this should throw an error if there are incompatible
-    # entries
+    # entries (it doesn't for integers!)
     fuels_data[,'plot_id'] =
       factor(as.character(fuels_data[,'plot_id']))
     fuels_data[,'inv_date'] =
