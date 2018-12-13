@@ -5,7 +5,8 @@
 #'
 #' A top-level wrapper function to estimate fuel loads from Brown's
 #' transect data and a treelist describing the local
-#' overstory for each observation. For details, see the vignette.
+#' overstory for each observation. For details, see the vignette or the
+#' \href{https://github.com/danfosterfire/Rfuels/blob/master/README.md}{README}.
 #'
 #' @param fuels_data The dataframe with the Brown's transect observations
 #' describing the fuels. See the vignette and/or README for more info.
@@ -247,7 +248,8 @@ estimate_litterduff_load = function(dataset, fuel_type){
 #' 10-hour (0.64 - 2.54 cm diameter), and 100-hour (2.54 - 7.62 cm diameter).
 #' Van WAgtendonk et al. (1996) and Brown (1974) give equations to estimate
 #' the fuel load (weight / area) represented by these tallies. For more details,
-#' see the vignette.
+#' see the vignette or the
+#' \href{https://github.com/danfosterfire/Rfuels/blob/master/README.md}{README}.
 #'
 #' @param dataset A tidy data frame with a row for each observation, and
 #' columns for the observed fine woody debris counts and the observation-
@@ -300,7 +302,8 @@ estimate_fwd_load = function(dataset, timelag_class, k_value){
 #' of all 1000-hour fuels (7.62+ cm in diameter).
 #' Van WAgtendonk et al. (1996) and Brown (1974) give equations to estimate
 #' the fuel load (weight / area) represented by these data. For more details,
-#' see the vignette.
+#' see the vignette or the
+#' \href{https://github.com/danfosterfire/Rfuels/blob/master/README.md}{README}.
 #'
 #' @param dataset A tidy data frame with a row for each observation, and
 #' columns for the sum of squared diamters for all sound and rotten 1000-hour
