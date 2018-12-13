@@ -36,5 +36,6 @@ using the parameter 'results_type'.
 \description{
 A top-level wrapper function to estimate fuel loads from Brown's
 transect data and a treelist describing the local
-overstory for each observation. For details, see the vignette.
+overstory for each observation. For details, see the vignette or the
+\href{https://github.com/danfosterfire/Rfuels/blob/master/README.md}{README}.
 }
