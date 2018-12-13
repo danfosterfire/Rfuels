@@ -36,7 +36,7 @@ estimate_fuel_loads =
 
   function(fuels_location,
            treelist_location,
-           results_type = 'full'){
+           results_type = 'results_only'){
 
     # script currently requires k = 1.234 (fuels in cm, transects in m, and
     # fuel loads in Mg / ha)
@@ -188,7 +188,7 @@ estimate_fuel_loads =
     } else {
 
       message('Unrecognized results type requested - valid types are "full",
-        "fuels_only", and "results_only". Returning full results by default.')
+        "fuels_only", and "results_only". Returning results_only by default.')
       return(combined_data)
 
     }

@@ -3,15 +3,17 @@ Scripts and documentation for estimating Sierra Nevadan surface fuels from Brown
 
 ## Todo
 
+update this readme
+
+
+
 ### complete and update function documentation (done except for examples)
 #### add examples
-#### change references of 'see vignette' to 'see background vignette'
-
-### write an example use section for vignette
 
 ### include some example load estimates from the literature for a sanity check
 
 ### do other package prep stuff
+  - citation, etc. follow wickham
 
 ### include the option to simplify calculations and just use Brown's coefficients
 
@@ -19,3 +21,4 @@ Scripts and documentation for estimating Sierra Nevadan surface fuels from Brown
 (and the variance) in the vignette
 
 ### include some example statistical analysis??? probably a bridge too far
+
