@@ -173,7 +173,7 @@ The results\_only dataframe (the default) includes the following columns:
 
 -   **inv\_date**: The date of the observation.
 
--   **pBA\_\[species\]**: For each \[species\], the proportion of total plot basal area occupied by that species. For example, if a plot has many small white fir totalling 0.06 *m*<sup>2</sup> basal area, and a few large ponderosa pine totalling 0.14 *m*<sup>2</sup> basal area, *pBA\_ABCO* = 0.3 and *pBA\_PIPO* = 0.7. These columns describe the species composition of the overstory for the transect.
+-   **pBA\_\[species\]**: For each \[species\], the proportion of total plot basal area occupied by that species. For example, if a plot has many small white fir totalling 0.06 ![m^2](https://latex.codecogs.com/png.latex?m%5E2 "m^2") basal area, and a few large ponderosa pine totalling 0.14 ![m^2](https://latex.codecogs.com/png.latex?m%5E2 "m^2") basal area, *pBA\_ABCO* = 0.3 and *pBA\_PIPO* = 0.7. These columns describe the species composition of the overstory for the transect.
 
 -   **pBA\_(all)**: The total proportional basal area of all species on the plot, which should always be equal to 1. (Or nearly so, within a small rounding error.)
 
@@ -209,7 +209,7 @@ The *results\_full* dataframe includes all of the above, plus these additonal co
 
 -   **slp\_c**: The slope correction factor used for the transect. Defaults to 1 if no transect-level slope information is available. See "Background Information" for more details.
 
--   **litter\_coeff** and **duff\_coeff**: Plot-specific estimates of the linear coefficient between duff / litter depth (in cm) and duff / litter fuel load (in kg / *m*<sup>2</sup>). Derived by averaging species-specific empirical values according to the species composition of the plot overstory. See "Background Information" for more details. When multiple transects share the same plot\_id, they will have the same overstory, and will share these coefficients.
+-   **litter\_coeff** and **duff\_coeff**: Plot-specific estimates of the linear coefficient between duff / litter depth (in cm) and duff / litter fuel load (in kg / ![m^2](https://latex.codecogs.com/png.latex?m%5E2 "m^2")). Derived by averaging species-specific empirical values according to the species composition of the plot overstory. See "Background Information" for more details. When multiple transects share the same plot\_id, they will have the same overstory, and will share these coefficients.
 
 -   **x1h\_coeff**, **x10h\_coeff**, and **x100h\_coeff**: Plot-specific coefficients derived by averaging species-specific empirical values according to the species composition of the plot overstory. See "Background Information" for more details. When multiple transects share the same plot\_id, they will have the same overstory, and will share these coefficients.
 
@@ -244,7 +244,7 @@ This method breaks forest fuels into three main categories, each of which has a 
 Litter and Duff
 ---------------
 
-Litter and duff are measured as depths as specific points along a sampling transect. Van Wagtendonk (1998) developed regressions for litter, Duff, and combined-litter-and-duff loading (kg/*m*<sup>2</sup>) as a function of depth (cm) for 19 different Sierra Nevada conifer species:
+Litter and duff are measured as depths as specific points along a sampling transect. Van Wagtendonk (1998) developed regressions for litter, Duff, and combined-litter-and-duff loading (kg/![m^2](https://latex.codecogs.com/png.latex?m%5E2 "m^2")) as a function of depth (cm) for 19 different Sierra Nevada conifer species:
 
 | species            | spp    |  litter\_coeff|  duff\_coeff|  litterduff\_coeff|
 |:-------------------|:-------|--------------:|------------:|------------------:|
@@ -272,31 +272,31 @@ Litter and duff are measured as depths as specific points along a sampling trans
 
 The fuel load represented by a depth measurement under a mixed-species overstory can be estimated using the equation
 
-*F*<sub>*d*, *p**l**o**t*</sub> = *d* \* *C**o**e**f**f*<sub>*p**l**o**t*</sub>
+![F\_{d,plot} = d \* Coeff\_{plot}](https://latex.codecogs.com/png.latex?F_%7Bd%2Cplot%7D%20%3D%20d%20%2A%20Coeff_%7Bplot%7D "F_{d,plot} = d * Coeff_{plot}")
 
 where:
 
--   *F*<sub>*d*, *p**l**o**t*</sub> is the fuel load (in kg/*m*<sup>2</sup>)
+-   ![F\_{d,plot}](https://latex.codecogs.com/png.latex?F_%7Bd%2Cplot%7D "F_{d,plot}") is the fuel load (in kg/![m^2](https://latex.codecogs.com/png.latex?m%5E2 "m^2"))
 
--   *d* is the depth of litter, duff, or litter and duff together (in cm) at some point along the transect. If depth was taken at multiple points along the transect, average them together to calculate *d*.
+-   ![d](https://latex.codecogs.com/png.latex?d "d") is the depth of litter, duff, or litter and duff together (in cm) at some point along the transect. If depth was taken at multiple points along the transect, average them together to calculate *d*.
 
--   *C**o**e**f**f*<sub>*p**l**o**t*</sub> is the best estimate coefficient for the linear relationship between depth and fuel load for a fuel bed generated by the overstory present at *plot*
+-   ![Coeff\_{plot}](https://latex.codecogs.com/png.latex?Coeff_%7Bplot%7D "Coeff_{plot}") is the best estimate coefficient for the linear relationship between depth and fuel load for a fuel bed generated by the overstory present at *plot*
 
-We can calculate *C**o**e**f**f*<sub>*p**l**o**t*</sub> by averaging together the different species-specific coefficients for each tree species contributing fuel to the plot, weighted by their local prevalence. Specifically, we weight each species' coefficient by the proportion of total basal area contributed by that species:
+We can calculate ![Coeff\_{plot}](https://latex.codecogs.com/png.latex?Coeff_%7Bplot%7D "Coeff_{plot}") by averaging together the different species-specific coefficients for each tree species contributing fuel to the plot, weighted by their local prevalence. Specifically, we weight each species' coefficient by the proportion of total basal area contributed by that species:
 
-$$Coeff\_{plot} = \\sum\_{spp}{\[(\\frac{BA\_{spp}}{BA\_{total}})\*Coeff\_{spp}\]}$$
+![Coeff\_{plot} = \\sum\_{spp}{\[(\\frac{BA\_{spp}}{BA\_{total}})\*Coeff\_{spp}\]}](https://latex.codecogs.com/png.latex?Coeff_%7Bplot%7D%20%3D%20%5Csum_%7Bspp%7D%7B%5B%28%5Cfrac%7BBA_%7Bspp%7D%7D%7BBA_%7Btotal%7D%7D%29%2ACoeff_%7Bspp%7D%5D%7D "Coeff_{plot} = \sum_{spp}{[(\frac{BA_{spp}}{BA_{total}})*Coeff_{spp}]}")
 
 Where
 
--   *C**o**e**f**f*<sub>*s**p**p*</sub> is the species-specific coefficient for species *spp*,
+-   ![Coeff\_{spp}](https://latex.codecogs.com/png.latex?Coeff_%7Bspp%7D "Coeff_{spp}") is the species-specific coefficient for species *spp*,
 
--   *C**o**e**f**f*<sub>*p**l**o**t*</sub> is the best estimate multiple-species coefficient we will use to estimate the fuel load for transects taken in the plot
+-   ![Coeff\_{plot}](https://latex.codecogs.com/png.latex?Coeff_%7Bplot%7D "Coeff_{plot}") is the best estimate multiple-species coefficient we will use to estimate the fuel load for transects taken in the plot
 
--   *B**A*<sub>*s**p**p*</sub> and *B**A*<sub>*t**o**t**a**l*</sub> are the basal area occupied by species *spp* and the total overstory basal area (respectively) in the plot.
+-   ![BA\_{spp}](https://latex.codecogs.com/png.latex?BA_%7Bspp%7D "BA_{spp}") and ![BA\_{total}](https://latex.codecogs.com/png.latex?BA_%7Btotal%7D "BA_{total}") are the basal area occupied by species *spp* and the total overstory basal area (respectively) in the plot.
 
--   $\\frac{BA\_{spp}}{BA\_{total}}$ is proportion of the plot's basal area occupied by species *spp*.
+-   ![\\frac{BA\_{spp}}{BA\_{total}}](https://latex.codecogs.com/png.latex?%5Cfrac%7BBA_%7Bspp%7D%7D%7BBA_%7Btotal%7D%7D "\frac{BA_{spp}}{BA_{total}}") is proportion of the plot's basal area occupied by species *spp*.
 
-This esimate of the fuel load represented by the transect can be averaged with other transects at the same plot (which will have the same value for *C**o**e**f**f*<sub>*p**l**o**t*</sub>, but different values for *d*) to generate plot-level estimates of fuel load, which can themselves be averaged to generate unit-level estimates of fuel load, depending on the user's study design.
+This esimate of the fuel load represented by the transect can be averaged with other transects at the same plot (which will have the same value for ![Coeff\_{plot}](https://latex.codecogs.com/png.latex?Coeff_%7Bplot%7D "Coeff_{plot}"), but different values for *d*) to generate plot-level estimates of fuel load, which can themselves be averaged to generate unit-level estimates of fuel load, depending on the user's study design.
 
 Fine Woody Debris: 1-hour, 10-hour, and 100-hour fuels
 ------------------------------------------------------
@@ -305,25 +305,25 @@ Calculating fuel loads represented by transect counts of 1-hour, 10-hour, and 10
 
 Van Wagtendonk et al. (1996) give the equation (modified from Brown 1974):
 
-$$W = \\frac{const\*QMD\*SEC\*SLP\*SG\*n}{length}$$
+![W = \\frac{const\*QMD\*SEC\*SLP\*SG\*n}{length}](https://latex.codecogs.com/png.latex?W%20%3D%20%5Cfrac%7Bconst%2AQMD%2ASEC%2ASLP%2ASG%2An%7D%7Blength%7D "W = \frac{const*QMD*SEC*SLP*SG*n}{length}")
 
 Where:
 
--   *W* is the estimated weight (in tons/acre, kg/ha, etc.) of fine woody debris size class *f* on the plot
+-   ![W](https://latex.codecogs.com/png.latex?W "W") is the estimated weight (in tons/acre, kg/ha, etc.) of fine woody debris size class *f* on the plot
 
--   *c**o**n**s**t* is a constant composed of various unit conversion factors (e.g., to get to tons/acre in the end), described by some authers as *k*
+-   ![const](https://latex.codecogs.com/png.latex?const "const") is a constant composed of various unit conversion factors (e.g., to get to tons/acre in the end), described by some authers as *k*
 
--   *Q**M**D* is the quadratic mean diameter of the fuels recorded in the transect
+-   ![QMD](https://latex.codecogs.com/png.latex?QMD "QMD") is the quadratic mean diameter of the fuels recorded in the transect
 
--   *S**E**C* is the correction for the nonhorizontal angle of the fuels
+-   ![SEC](https://latex.codecogs.com/png.latex?SEC "SEC") is the correction for the nonhorizontal angle of the fuels
 
--   *S**L**P* is the slope correction factor, which allows corrected for the effect of a non-horizontal transect on the horizontal distance sampled
+-   ![SLP](https://latex.codecogs.com/png.latex?SLP "SLP") is the slope correction factor, which allows corrected for the effect of a non-horizontal transect on the horizontal distance sampled
 
--   *S**G* is the specific gravity of the fuels in the transect
+-   ![SG](https://latex.codecogs.com/png.latex?SG "SG") is the specific gravity of the fuels in the transect
 
--   *n* is the number of fuel particles intersecting the transect,
+-   ![n](https://latex.codecogs.com/png.latex?n "n") is the number of fuel particles intersecting the transect,
 
--   and *l**e**n**g**t**h* is the length of the transect.
+-   and ![length](https://latex.codecogs.com/png.latex?length "length") is the length of the transect.
 
 Procedures for calculating these values are described below. *QMD*, *SEC*, and *SG* all vary by timelag classification, and so *W* is calculated individually for each timelag (1h, 10h, and 100h).
 
@@ -372,15 +372,15 @@ QMD, SEC, and SG vary by species and timelag classification of the fuel being to
 
 These constants are used in combination with overstory data to create an aggregate estimate of QMD, an average of the various species' QMD estimates (from Van Wagtendonk et al.) weighted by the proportion of stand basal area occupied by each species. See the following formula:
 
-*Q**M**D*<sub>*p**l**o**t*, *t**i**m**e**l**a**g*</sub> = ∑<sub>*s**p**e**c**i**e**s* = *s**p**p*</sub>*P**r**o**p**B**A*<sub>*s**p**p*, *p**l**o**t*</sub> \* *Q**M**D*<sub>*s**p**p*, *t**i**m**e**l**a**g*</sub>
+![QMD\_{plot,timelag} = \\sum\_{species=spp}{PropBA\_{spp,plot}\*QMD\_{spp,timelag}}](https://latex.codecogs.com/png.latex?QMD_%7Bplot%2Ctimelag%7D%20%3D%20%5Csum_%7Bspecies%3Dspp%7D%7BPropBA_%7Bspp%2Cplot%7D%2AQMD_%7Bspp%2Ctimelag%7D%7D "QMD_{plot,timelag} = \sum_{species=spp}{PropBA_{spp,plot}*QMD_{spp,timelag}}")
 
 Where
 
--   *Q**M**D*<sub>*p**l**o**t*</sub> is the estimated quadratic mean diameter of fuels in the *timelag* class in the *plot* across all species
+-   ![QMD\_{plot}](https://latex.codecogs.com/png.latex?QMD_%7Bplot%7D "QMD_{plot}") is the estimated quadratic mean diameter of fuels in the *timelag* class in the *plot* across all species
 
--   *P**r**o**p**B**A*<sub>*s**p**p*, *p**l**o**t*</sub> is the proportion of total basal area in *plot* occupied by the species *spp*, calculated from the measurement data
+-   ![PropBA\_{spp,plot}](https://latex.codecogs.com/png.latex?PropBA_%7Bspp%2Cplot%7D "PropBA_{spp,plot}") is the proportion of total basal area in *plot* occupied by the species *spp*, calculated from the measurement data
 
--   *Q**M**D*<sub>*s**p**p*, *t**i**m**e**l**a**g*</sub> is the QMD of fuels in the *timelag* class for species *spp*, as reported by Van Wagtendonk et al. (1996) Table 3.
+-   ![QMD\_{spp,timelag}](https://latex.codecogs.com/png.latex?QMD_%7Bspp%2Ctimelag%7D "QMD_{spp,timelag}") is the QMD of fuels in the *timelag* class for species *spp*, as reported by Van Wagtendonk et al. (1996) Table 3.
 
 ### SEC (secant of acute angle)
 
@@ -442,7 +442,7 @@ A propotion-BA-weighted average of SEC is generated in the same way as QMD above
 
 ### SLP (slope correction factor)
 
-*SLP* varies by the plot location and transect azimuth, $SLP = c = \\sqrt{1+(\\frac{percentslope}{100})^2}$ per Brown 1974. This is a simple adjustment for the influence of slope on transect length.
+*SLP* varies by the plot location and transect azimuth, ![SLP = c = \\sqrt{1+(\\frac{percentslope}{100})^2}](https://latex.codecogs.com/png.latex?SLP%20%3D%20c%20%3D%20%5Csqrt%7B1%2B%28%5Cfrac%7Bpercentslope%7D%7B100%7D%29%5E2%7D "SLP = c = \sqrt{1+(\frac{percentslope}{100})^2}") per Brown 1974. This is a simple adjustment for the influence of slope on transect length.
 
 ### length
 
@@ -457,11 +457,11 @@ Coarse Woody Debris: 1000-hour fuels
 
 Brown (1974) gives:
 
-$$W\_{1000h} = \\frac{11.64\*\\sum{d^2}\*s\*a\*c}{N\*l}$$
+![W\_{1000h} = \\frac{11.64\*\\sum{d^2}\*s\*a\*c}{N\*l}](https://latex.codecogs.com/png.latex?W_%7B1000h%7D%20%3D%20%5Cfrac%7B11.64%2A%5Csum%7Bd%5E2%7D%2As%2Aa%2Ac%7D%7BN%2Al%7D "W_{1000h} = \frac{11.64*\sum{d^2}*s*a*c}{N*l}")
 
 and notes:
 
-> "For material 3 inches and larger, square the diameter of each intersected piece and sum the squared values (∑*d*<sup>2</sup>) for all pieces in the sampled area. Compute ∑*d*<sup>2</sup> separately for sound and rotten categories. To obtain weights or volumes for certain diameter ranges (3 to 9 inches, for example), compute ∑*d*<sup>2</sup> for the specified range."
+> "For material 3 inches and larger, square the diameter of each intersected piece and sum the squared values (![\\sum{d^2}](https://latex.codecogs.com/png.latex?%5Csum%7Bd%5E2%7D "\sum{d^2}")) for all pieces in the sampled area. Compute ![\\sum{d^2}](https://latex.codecogs.com/png.latex?%5Csum%7Bd%5E2%7D "\sum{d^2}") separately for sound and rotten categories. To obtain weights or volumes for certain diameter ranges (3 to 9 inches, for example), compute ![\\sum{d^2}](https://latex.codecogs.com/png.latex?%5Csum%7Bd%5E2%7D "\sum{d^2}") for the specified range."
 
 This equation is just a special case of the equations given above for 1-100 hour fuels. 11.64 is a unit conversion factor for US units (*const* as above), *s* is the specific gravity of the fuel (*SG* as above), *a* is a value for the secant angle (*SEC* as above), and *c* is the slope correction factor (*SLP* as above). *N* is the number of transects represented in the calculation, and is assumed to be 1 in this method. *l* is the transect length, as described above.
 
@@ -469,7 +469,7 @@ The difference is that instead of counted intercepts and an average squared quad
 
 For sound 1000-hour fuels, we can substitute the BA-weighted-average for a specific transect's overstory and re-arrange the equation:
 
-$$W\_{1000S} = (\\sum{d^2})\*(\\frac{const\*SLP}{length})\*\\sum\_{spp}{(\\frac{BA\_{spp}}{BA\_{total}})\*SEC\_{spp,1000s})}\*(\\sum\_{spp}{(\\frac{BA\_{spp}}{BA\_{total}})\*SG\_{spp,1000s}})$$
+![W\_{1000S} = (\\sum{d^2})\*(\\frac{const\*SLP}{length})\*\\sum\_{spp}{(\\frac{BA\_{spp}}{BA\_{total}})\*SEC\_{spp,1000s})}\*(\\sum\_{spp}{(\\frac{BA\_{spp}}{BA\_{total}})\*SG\_{spp,1000s}})](https://latex.codecogs.com/png.latex?W_%7B1000S%7D%20%3D%20%28%5Csum%7Bd%5E2%7D%29%2A%28%5Cfrac%7Bconst%2ASLP%7D%7Blength%7D%29%2A%5Csum_%7Bspp%7D%7B%28%5Cfrac%7BBA_%7Bspp%7D%7D%7BBA_%7Btotal%7D%7D%29%2ASEC_%7Bspp%2C1000s%7D%29%7D%2A%28%5Csum_%7Bspp%7D%7B%28%5Cfrac%7BBA_%7Bspp%7D%7D%7BBA_%7Btotal%7D%7D%29%2ASG_%7Bspp%2C1000s%7D%7D%29 "W_{1000S} = (\sum{d^2})*(\frac{const*SLP}{length})*\sum_{spp}{(\frac{BA_{spp}}{BA_{total}})*SEC_{spp,1000s})}*(\sum_{spp}{(\frac{BA_{spp}}{BA_{total}})*SG_{spp,1000s}})")
 
 van Wagtendonk 1998 give species-specific values for QMD, SEC, and SG, for both 1000-hour sound and 1000-hour rotten fuels.
 
