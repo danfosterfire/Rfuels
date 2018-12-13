@@ -1,0 +1,624 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+
+devtools::load_all()
+```
+
+
+
+#Introduction
+
+Rfuels is a small package for estimating surface fuel loads from Brown's 
+transects (a.k.a. line-intercept transects) in forests dominated by Sierra 
+Nevada conifer species. 
+
+The common protocols for sampling surface fuels in 
+forest ecosystems directly describe the fuel load in terms of duff/litter 
+depth, counts of fine woody fuels, and surveys of coarse woody debris. However, 
+many uses of these data (e.g. fire behavior models and carbon accounting) 
+require the fuel load to be expressed in terms of mass of surface fuels 
+per unit area. 
+
+Brown (1974) described a general-purpose set of equations to 
+estimate fuel loads from transect data. Rfuels uses the species composition of 
+the local overstory to improve the fuel load estimates from Brown's transects. 
+
+See "Using Rfuels" for information about data requirements and using the 
+package, and see "Background Information" for a more detailed description 
+of the estimation method.
+
+#Installing Rfuels
+
+Someday, Rfuels may appear on the CRAN repository. For now, you can install 
+Rfuels from the GitHub repo:
+
+```{r eval = FALSE}
+# install the 'devtools' package
+install.packages("devtools")
+
+# load the 'devtools' package
+library(devtools)
+
+# install Rfuels
+devtools::install_github('danfosterfire/Rfuels')
+
+```
+
+Then you can load the Rfuels package with:
+
+```{r}
+library(Rfuels)
+```
+
+#Using Rfuels
+
+Rfuels provides a high-level wrapper function, **estimate_fuel_loads()**, which  
+takes three arguments:
+
+  - *fuels_location*, the filepath to a properly formatted .csv file containing 
+  the observed fuels data
+  - *treelist_location*, the filepath to a properly formatted .csv file containg 
+  the observed tree data
+  - *results_type*, either 'full', 'results_only', or 'fuels_only'. This sets 
+  the verbosity of the results dataframe.
+  
+**estimate_fuel_loads()** will return a tidy dataframe, with each row a unique 
+observation (a fuels transect sampled on a specific date) and columns describing 
+the surface fuel load in various subcategories. 
+
+##Data Requirements
+
+Rfuels imposes very specific requirements on the type and format of input data, 
+so read this section carefully!
+
+###Fuels Data
+
+Surface fuels should be recorded in the field following Brown (1974) or a 
+similar method. The specifics of transect lengths, number of transects 
+per plot, and the number of litter and duff samples per transect are variable, 
+but the broad outline is common:
+
+  - Each sampling location (plot) will have one or more transects starting 
+  at the plot center
+  
+  - All measurements are collected along all transects
+  
+  - Litter and duff depths are sampled at fixed location(s) along each transect
+  
+  - For predefined distances along the transect, the number of fine woody fuel 
+  particles that intersect the transect is recorded as a count. Fine woody 
+  fuel particles are categorized by size into 1-hour, 10-hour, and 100-hour 
+  fuels, and recorded separately.
+  
+  - Each 1000-hour fuel intersecting the transect has its diameter and 
+  decay class recorded individually
+  
+  - Most versions of the protocol also call for measuring the depth of the 
+  entire fuelbed, but this information is not used for estimating the fuel 
+  load represented by the sample
+  
+Rfuels requires the input fuels data to be formatted as a .csv file with a 
+row for each observation (a transect on a specific date). The .csv table must 
+have at least these columns (column names are exact):
+
+  - **plot_id**: Plot IDs identify the sampling location. If you have 
+  a nested study design with "stand A plot 1" and "stand B plot 1", use 
+  "A-1" and "B-1" as PlotIDs. (This will be helpful when running statistical 
+  analyses later.) There may be multiple inventory dates per
+  plot_id and/or multiple transects sharing a plot_id. plot_id will be coerced 
+  to a character vector on import.
+  
+  - **inv_date**: The date of measurement, in mm/dd/YYYY format. There must 
+  be a 1:1 match between the dates of fuels measurements and dates of trees 
+  data. 
+
+  - **azimuth**: Integer in the range 0-359 (inclusive) giving the
+ azimuth from plot center for the transect. Rfuels uses the azimuth as an 
+ identifier for individual transects within plots. Must be unique within a
+ (plot_id:inv_date). Will be coerced to character.
+
+ - **x1h_length_m**, **x10h_length_m**, **x100h_length_m**, and 
+ **x1000h_length_m**: Numeric(s) greater than 0. 
+ The length (in meters) of the sampling transects for 1-hour,
+ 10-hour, 100-hour, and 1000-hour fuels, respectively. Transect lengths 
+ may vary by plot_id and/or year, for example if sampling protocols changed 
+ over time, or 1000-hour transects were extended until at least one 
+ intersection was found.
+
+  - **count_x1h, count_x10h, count_x100h**: Integers greater than or
+ equal to 0. Transect counts of the number of intersections for 1-, 10-,
+ and 100-hour fuels, respectively.
+
+ - **duff_depth_cm** and **litter_depth_cm**: Numeric greater than 0.
+ Average depth of duff / litter (in cm) on the transect. Users with multiple
+ measurements per transect of litter and/or duff should average them
+ together before import. Depths must be recorded in cm.
+
+ - **sum_d2_1000r_cm2** and **sum_d2_1000s_cm2** The sum-of-squared-diameters
+ for 1000-hour fuels on the transect, for rotten and sound fuels
+ respectively. Users must aggregate their large fuels (1000-hour) into
+ sound or rotten classes, and sum the squared diameters (in cm) for all
+ 1000-s or 1000-r intersections on the transect.
+
+Additionally, the .csv file *may* have a column for **slope_percent**, the
+slope (in percent) along the transect. Brown's equations include the
+option to correct for the slope effect on horizontal length of transects.
+*Keep in mind that this correction factor applies to the transect slope,
+not the plot slope.* If a slope_percent is not supplied, we set the slope
+correction factor to 1 (no slope).
+
+###Treelist
+
+The source .csv file must have a row for each observation of each individual
+tree on each sampling date, and at least these columns:
+
+  - **plot_id**: Plot IDs identify the sampling location. If you have 
+  a nested study design with "stand A plot 1" and "stand B plot 1", use full 
+  nested identifiers (e.g. "A-1" and "B-1"). This will be helpful when running
+  statistical analyses later.) There may be multiple inventory dates per
+  plot_id and/or multiple transects sharing a plot_id. plot_id will be coerced 
+  to a character vector on import.
+  
+  - **inv_date**: The date of measurement, in mm/dd/YYYY format. There must 
+  be a 1:1 match between the dates of fuels measurements and dates of trees 
+  data. 
+  
+  - **species**: A species identifier code for the individual tree. Generally 
+  follows 4-letter scientific abbreviation format (e.g. Abies concolor is 
+  "ABCO", not "WF", "White fir", "Abies_concolor", etc.). Compare your species 
+  codes to those included in the Van Wagtendonk constant tables (see 
+  "Background Information") to ensure correct matching. Note that 
+  singleleaf pinyon (Pinus monophylla) and western white pine (Pinus monticola) 
+  would share the code "PIMO" - these should be labeled "PIMO1" and "PIMO2",
+  respectively.
+
+  - **dbh_cm**: The diameter at breast height (4.5', 1.37m) of the tree in
+  centimeters.
+
+##Call estimate_fuel_loads()
+
+Once your input data are properly formatted, you can call estimate_fuel_loads() 
+and assign the resulting dataframe to a variable:
+
+```{r}
+transect_fuel_loads =  
+  
+  estimate_fuel_loads(fuels_location =
+                          system.file('extdata','example_fuels.csv',
+                                      package = 'Rfuels'),
+                      treelist_location =
+                          system.file('extdata','example_treelist.csv',
+                                      package = 'Rfuels'),
+                      results_type = 'results_only')
+
+
+```
+
+We got two a message about the type of results returned, and also a warning 
+about our input treelist. Our dataset includes *Quercus kelloggii*, which isn't 
+one of the tree species for which we have empirical data to plug into the fuel 
+load estimations. **estimate_fuel_loads()** makes a best-guess and counts all 
+unrecognized tree species as 'OTHER', and applies the "All species" generic 
+coefficients from Van Wagtendonk et al. (1996) and (1998). 
+
+(How appropriate it is to apply an 'all species' constant for Sierra Nevada 
+conifers to black oak fuels is another question; hopefully in the future 
+we can expand the empirical dataset Rfuels draws upon.)
+
+Now we have a dataframe with the fuel load (and some overstory information) 
+for each transect in each year:
+
+```{r}
+head(transect_fuel_loads)
+```
+
+##Results details
+
+The results_only dataframe (the default) includes the following columns:
+
+  - **plot_id**: A factor with the plot_id (location in space and/or study 
+  design) for each observation.
+  
+  - **inv_date**: The date of the observation.
+  
+  - **pBA_[species]**: For each [species], the proportion of total plot basal 
+  area occupied by that species. For example, if a plot has many small 
+  white fir totalling 0.06 $m^2$ basal area, and a few large ponderosa pine 
+  totalling 0.14 $m^2$ basal area, *pBA_ABCO* = 0.3 and *pBA_PIPO* = 0.7. These 
+  columns describe the species composition of the overstory for the transect.
+  
+  - **pBA_(all)**: The total proportional basal area of all species on the plot, 
+  which should always be equal to 1. (Or nearly so, within a small rounding 
+  error.)
+  
+  - **azimuth**: The azimuth from plot center used for the transect. This can 
+  (and should) be used as a nested observation identifier within a plot_id.
+  
+  - **fuelload_litter_Mgha**: The fuel load of litter, in metric tons per 
+  hectare, as sampled on a single transect. Robust stand-level estimates 
+  should include many transects.
+  
+  - **fuelload_duff_Mgha**: The fuel load of duff, in metric tons per hectare.
+  
+  - **fuelload_1h_Mgha**: The fuel load of 1-hour fuels (0 - 0.64 cm diameter), 
+  in metric tons per hectare.
+  
+  - **fuelload_10h_Mgha**: The fuel load of 10-hour fuels (0.64 - 2.54 cm 
+  diameter), in metric tons per hectare.
+  
+  - **fuelload_100h_Mgha**: The fuel load of 100-hour fuels (2.54 - 7.62 cm 
+  diameter), in metric tons per hectare.
+  
+  - **fuelload_1000s_Mgha**: The fuel load of sound 1000-hour fuels (7.62+ cm 
+  diameter) in metric tons per hectare.
+  
+  - **fuelload_1000r_Mgha**: The fuel load of rotten 1000-hour fuels (7.62+ cm 
+  diameter) in metric tons per hectare.
+  
+  - **fuelload_fwd_Mgha**: The total 'fine woody debris' fuel load (1-hour, 
+  10-hour, and 100-hour fuels combined) in metric tons per hectare.
+  
+  - **fuelload_1000h_Mgha**: The total 1000-hour fuel load (sound and rotten 
+  combined) in metric tons per hectare.
+  
+  - **fuelload_surface_Mgha**: The total surface fuel load, in metric tons 
+  per hectare. This is the sum of the litter, fine woody debris, and 1000-hour 
+  fuel loads.
+  
+  - **fuelload_total_Mgha**: The total fuel load, in metric tons per hectare. 
+  This is the sum of the litter, duff, fine woody debris, and 1000-hour fuel 
+  loads.
+
+The *results_full* dataframe includes all of the above, plus these additonal 
+columns describing the directly observed values and some intermediate 
+calculations:
+
+  - **x1h_length_m**, **x10h_length_m**, **x100h_length_m**, and 
+  **x_1000h_length_m**: Relevant transect lengths in meters.
+  
+  - **count_x1h**, **count_x10h**, **count_x100h**, **duff_depth_cm**, 
+  **litter_depth_cm**, **sum_d2_1000r_cm2**, and **sum_d2_1000s_cm2**: The 
+  empirical observations for each fuel category, as supplied by the input data.
+  
+  - **slp_c**: The slope correction factor used for the transect. Defaults to 
+  1 if no transect-level slope information is available. See 
+  "Background Information" for more details.
+  
+  - **litter_coeff** and **duff_coeff**: Plot-specific estimates of the 
+  linear coefficient between duff / litter depth (in cm) and duff / litter 
+  fuel load (in kg / $m^2$). Derived by averaging species-specific 
+  empirical values according to the species composition of the plot overstory. 
+  See "Background Information" for more details.
+  When multiple transects share the same plot_id, they will have the same 
+  overstory, and will share these coefficients.
+  
+  - **x1h_coeff**, **x10h_coeff**, and **x100h_coeff**: Plot-specific 
+  coefficients derived by averaging species-specific 
+  empirical values according to the species composition of the plot 
+  overstory. See "Background Information" for more details.
+  When multiple transects share the same plot_id, they will have the same 
+  overstory, and will share these coefficients.
+  
+  - **x1000s_coeff** and **x1000r_coeff**: A plot-specific 
+  coefficients derived by averaging species-specific 
+  empirical values according to the species composition of the plot 
+  overstory. See "Background Information" for more details.
+  When multiple transects share the same plot_id, they will have the same 
+  overstory, and will share these coefficients.
+  
+Finally, the *fuels_only* dataframe includes only the observation identification
+columns (*plot_id*, *inv_date*, and *azimuth*) and the columns for the 
+various fuel load categories.
+
+##Working with fuel load data
+
+*under construction*
+
+#Background Information
+
+This method for calculating fuel loads from Brown's transects was originally 
+described in Stephens (2001). Specifically:
+
+> "Surface and ground fuel loads were calculated by using appropriate equations 
+developed for Sierra Nevada forests (van Wagtendonk et al. 1996, 1998). 
+Coefficients required to calculate all surface and ground fuel loads were 
+arithmetically weighted by the basal area fraction (percentage of total basal 
+area by species) to produce accurate estimates of fuel loads (Jan van 
+Wagtendonk, personal communication, 1999)." 
+
+Since then, the method has been used repeatedly in other publications, 
+particularly those related to the Fire-Fire-Surrogate study at Blodgett Forest 
+Reserach Station, e.g. Stephens and Moghaddas (2005) and Stephens 
+et al. (2012). At some point, Jason Moghaddas constructed an excel workbook 
+(with included macros) to facilitate use of the method for new datasets. 
+
+The this package implements the method in R, using Moghaddas' 
+implementation (and various publications) for reference. The goal of this 
+effort is to make the method more accessible, transparent, and reproducible 
+for use in future research.
+
+This method requires Brown's transect data and plot (or stand) level overstory 
+data. Brown (1974) describes the widely used fuels transect sampling protocol 
+and provides equations used to calculate fuel loads for woody debris from the 
+transect samples. 
+
+The general idea of Stephens's modification of the method is to refine the 
+fuel load estimates by using overstory data to improve the accuracy of 
+coefficents used in Brown's equations to calculate 
+fuel loads from transect data. Specifically, QMD, SEC, and SG are coefficients 
+which vary by the species that is the fuel source, and so better estimates can 
+(presumably) be derived by using species-weighted-average values for QMD, SEC, 
+and SG rather than using Brown's given values, which are generalized for 
+entire regions. (See below for definitions of QMD, SEC, and SG.)
+
+**Note:** This implementation of the method assumes the user is working in the 
+Sierra Nevada. Any species not included in the Van Wagtendonk et al. tables 
+below is assigned their "All Species" value by default. Also, per the usage of 
+Moghaddas' spreadsheet for previous studies, I have elected to include both 
+live and dead trees in the basal-area calculations for the purposes of 
+calculating fuel loads.
+
+This method breaks forest fuels into three main categories, each of which has a 
+particular implementation for calculating the fuel load represented by transect 
+samples.
+
+##Litter and Duff
+
+Litter and duff are measured as depths as specific points along a sampling 
+transect. Van Wagtendonk (1998) developed regressions for litter, Duff, and 
+combined-litter-and-duff loading (kg/$m^2$) as a function of depth (cm) for 19 
+different Sierra Nevada conifer species: 
+
+```{r echo = FALSE}
+knitr::kable(Rfuels:::litterduff_coeffs,
+             caption = 'Van Wagtendonk et al. (1998) Table 7: Regression statistics for litter, duff, and litter and duff weight (kg m-2) as a function of their respective depths (cm) for 19 Sierra Nevada conifers')
+```
+
+The fuel load represented by a depth measurement under a mixed-species overstory can be estimated using the equation
+
+$$F_{d,plot} = d * Coeff_{plot}$$
+
+where:
+
+  - $F_{d,plot}$ is the fuel load (in kg/$m^2$)
+
+  - $d$ is the depth of litter, duff, or litter and duff together (in cm) at some 
+  point along the transect. If depth was taken at multiple points along the 
+  transect, average them together to calculate *d*.
+
+  - $Coeff_{plot}$ is the best estimate coefficient for the linear relationship 
+  between depth and fuel load for a fuel bed generated by the overstory present 
+  at *plot*
+
+We can calculate $Coeff_{plot}$ by averaging together the different species-specific 
+coefficients for each tree species contributing fuel to the plot, weighted by 
+their local prevalence. Specifically, we weight each species' coefficient by 
+the proportion of total basal area contributed by that species:
+
+$$Coeff_{plot} = \sum_{spp}{[(\frac{BA_{spp}}{BA_{total}})*Coeff_{spp}]}$$
+
+Where 
+
+  - $Coeff_{spp}$ is the species-specific coefficient for species *spp*, 
+  
+  - $Coeff_{plot}$ is the best estimate multiple-species coefficient we will 
+  use to estimate the fuel load for transects taken in the plot
+
+  - $BA_{spp}$ and $BA_{total}$ are the basal area occupied by species *spp* 
+  and the total overstory basal area (respectively) in the plot. 
+  
+  - $\frac{BA_{spp}}{BA_{total}}$ is proportion of the plot's basal area 
+  occupied by species *spp*. 
+
+This esimate of the fuel load represented by the transect can be averaged with 
+other transects at the same plot (which will have the same value for 
+$Coeff_{plot}$, but different values for *d*) to generate plot-level 
+estimates of fuel load, which can themselves be averaged to generate unit-level 
+estimates of fuel load, depending on the user's study design.
+
+##Fine Woody Debris: 1-hour, 10-hour, and 100-hour fuels
+
+Calculating fuel loads represented by transect counts of 1-hour, 10-hour, and 
+100-hour fuels is more complicated, but follows the same principle as described 
+for litter and duff above. The different timelag classes (which correspond to 
+size classes of 0.0-0.64cm, 0.64-2.54cm, and 2.54-7.62cm, respectively) must 
+be calculated separately but in a common manner.
+
+Van Wagtendonk et al. (1996) give the equation (modified from Brown 1974):
+
+$$W = \frac{const*QMD*SEC*SLP*SG*n}{length}$$
+
+Where:
+
+  - $W$ is the estimated weight (in tons/acre, kg/ha, etc.) of fine woody 
+  debris size class *f* on the plot 
+
+  - $const$ is a constant composed of various unit conversion factors (e.g., 
+  to get to tons/acre in the end), described by some authers as *k*
+
+  - $QMD$ is the quadratic mean diameter of the fuels recorded in the transect
+
+  - $SEC$ is the correction for the nonhorizontal angle of the fuels
+
+  - $SLP$ is the slope correction factor, which allows corrected for the effect 
+  of a non-horizontal transect on the horizontal distance sampled
+
+  - $SG$ is the specific gravity of the fuels in the transect
+
+  - $n$ is the number of fuel particles intersecting the transect,
+
+  - and $length$ is the length of the transect. 
+
+Procedures for calculating these values are described below. *QMD*, *SEC*, and 
+*SG* all vary by timelag classification, and so *W* is calculated 
+individually for each timelag (1h, 10h, and 100h).
+
+###Const (k-values)
+
+Equation constant *k* ("const" in van Wagtendonk 1996 and Brown 1974) for 
+sampled units and output units. These values for *k* are from van Wagner 
+(1982), and these are used by forest service per Woodall and Williams (2008).
+(These values are also consistent with Moghaddas' work.)
+
+```{r echo = FALSE}
+knitr::kable(Rfuels:::kvals,
+             caption = 'Van Wagner (1982) Table 1: Equation constant k for some length, volume, and weight units in line intersect sampling')
+```
+
+
+
+###QMD (Quadratic mean diameter in centimeters squared)
+
+QMD, SEC, and SG vary by species and timelag classification of the fuel being 
+totaled. Values for specific species/timelag for fine woody fuels are drawn 
+from van Wagtendonk (1996).
+
+```{r echo = FALSE}
+knitr::kable(Rfuels:::QMDcm,
+             caption = 'Van Wagtendonk et al. (1996) Table 3: Average squared quadratic mean diameter by fuel size class for 19 Sierra Nevada conifers')
+```
+
+These constants are used in combination with overstory data to create an aggregate estimate of QMD, an average of the various species' QMD estimates (from Van Wagtendonk et al.) weighted by the proportion of stand basal area occupied by each species. See the following formula:
+
+$$QMD_{plot,timelag} = \sum_{species=spp}{PropBA_{spp,plot}*QMD_{spp,timelag}}$$
+
+Where 
+
+  - $QMD_{plot}$ is the estimated quadratic mean diameter of fuels in the 
+  *timelag* class in the *plot* across all species
+
+  - $PropBA_{spp,plot}$ is the proportion of total basal area in *plot* occupied 
+  by the species *spp*, calculated from the measurement data
+
+  - $QMD_{spp,timelag}$ is the QMD of fuels in the *timelag* class for species 
+  *spp*, as reported by Van Wagtendonk et al. (1996) Table 3.
+
+###SEC (secant of acute angle)
+
+```{r echo = FALSE}
+knitr::kable(Rfuels:::SEC,
+             caption = 'Van Wagtendonk et al. (1996) Table 6: Average secant of acute angles of inclination of nonhorizontal particles by fuel size class for 19 Sierra Nevada conifers')
+```
+
+A propotion-BA-weighted average of SEC is generated in the same way as QMD above.
+
+###SG (specific gravity)
+
+Note that van Wagtendonk et al. found that "species was not significant for the 
+7.62+cm (3+ in) rotten fuels." and that the average specific gravity for rotten 
+fuels was .36, which is here included as a value.
+
+```{r echo = FALSE}
+knitr::kable(Rfuels:::SG,
+             caption = 'Van Wagtendonk et al. (1996) Table 8: Average specific gravity by fuel size class for 19 Sierra Nevada conifers')
+```
+
+A propotion-BA-weighted average of SEC is generated in the same way as QMD above.
+
+###SLP (slope correction factor)
+
+*SLP* varies by the plot location and transect 
+azimuth, $SLP = c = \sqrt{1+(\frac{percentslope}{100})^2}$ per Brown 1974. 
+This is a simple adjustment for the influence of slope on transect length.
+
+###length 
+
+*length* is the length of the sampling transect, and varies by the sampling 
+protocol (which may vary from year-to-year) and the timelag class.
+
+###n 
+
+*n* is the number of intersections of the given timeclass in the plane of the 
+transect.
+
+##Coarse Woody Debris: 1000-hour fuels
+
+Brown (1974) gives:
+
+$$W_{1000h} = \frac{11.64*\sum{d^2}*s*a*c}{N*l}$$
+
+and notes: 
+
+> "For material 3 inches and larger, square the diameter of each intersected 
+piece and sum the squared values ($\sum{d^2}$) for all pieces in the sampled 
+area. Compute $\sum{d^2}$ separately for sound and rotten categories. To 
+obtain weights or volumes for certain diameter ranges (3 to 9 inches, for 
+example), compute $\sum{d^2}$ for the specified range."
+
+This equation is just a special case of the equations given above for 1-100 
+hour fuels. 11.64 is a unit conversion factor for US units (*const* as above), 
+*s* is the specific gravity of the fuel (*SG* as above), 
+*a* is a value for the secant angle (*SEC* as above), and *c* is the slope 
+correction factor (*SLP* as above). *N* is the number of transects 
+represented in the calculation, and is assumed to be 1 in this method. 
+*l* is the transect length, as described above.
+
+The difference is that instead of counted intercepts and an average squared 
+quadratic mean diameter, we have the actual sum of squared diameters from the 
+measurements directly. 
+
+For sound 1000-hour fuels, we can substitute the BA-weighted-average for a 
+specific transect's overstory and re-arrange the equation:
+
+$$W_{1000S} = (\sum{d^2})*(\frac{const*SLP}{length})*\sum_{spp}{(\frac{BA_{spp}}{BA_{total}})*SEC_{spp,1000s})}*(\sum_{spp}{(\frac{BA_{spp}}{BA_{total}})*SG_{spp,1000s}})$$
+
+van Wagtendonk 1998 give species-specific values for QMD, SEC, and SG, for both 
+1000-hour sound and 1000-hour rotten fuels. 
+
+Users who have diameter measurements for 1000-hour fuels (which is a 
+standard sampling protocol) have actual diameter measurements, and don't need 
+the by-species QMD averages from Van Wagtendonk et al. (1996). 
+
+Van Wagtendonk et al. (1996) do not discuss sound vs. rotten 1000-hour fuels, 
+stating only that "The average secant of the acute angle to the horizontal for 
+the 7.62+ cm (3+in) size class for all species was 2.67 (Table 6)." However, 
+actually referring to table six gives very different data, with by-species 
+averages recorded and varying from 1.00 to 1.06, with an average of 1.02. I 
+believe the text is in error (2.67 bears no resemblance to the data given in 
+the table, but it is 7.62 reversed.) 
+
+For SG, "The average specific gravity for rotten fuels was .36." and "species 
+was not significant for the 7.62+ cm (3+ in) rotten fuels." Specific gravities 
+by species for sound 1000-hour fuels are given in Van Wagtendonk et al. (1996), 
+Table 8. 
+
+#References
+
+  - Brown, J. K. *Handbook for Inventorying Downed Woody Material.* USDA For. 
+  Serv. Gen. Tech. Rep. 24 (1974). https://www.fs.usda.gov/treesearch/pubs/28647
+
+  - Stephens, S. L. *Fire history differences in adjacent Jeffrey pine and upper 
+  montane forests in the eastern Sierra Nevada.* Int. J. Wildl. Fire 10, 161–167 
+  (2001). https://doi.org/10.1071/WF01008
+  
+  - Stephens, S. L. & Moghaddas, J. J. *Experimental fuel treatment impacts on 
+  forest structure, potential fire behavior, and predicted tree mortality in a 
+  California mixed conifer forest.* For. Ecol. Manage. 215, 21–36 (2005). 
+  https://doi.org/10.1016/j.foreco.2005.03.070
+  
+  - Stephens, S. L., Collins, B. M. & Roller, G. *Fuel treatment longevity in 
+  a Sierra Nevada mixed conifer forest.* For. Ecol. Manage. 285, 204–212 (2012).
+  https://doi.org/10.1016/j.foreco.2012.08.030
+  
+  - Van Wagner, C. E. *Practical aspects of the line intersect method.* Forestry 
+  18 (1982). http://www.cfs.nrcan.gc.ca/pubwarehouse/pdfs/6862.pdf
+  
+  - Van Wagtendonk, J. W., Benedict, J. M. & Sydoriak, W. M. *Physical 
+  properties of woody fuel particles of Sierra Nevada conifers.* Int. J. Wildl. 
+  Fire 6, 117–123 (1996). https://doi.org/10.1071/WF9960117
+  
+  - Van Wagtendonk, J. W., Benedict, J. M. & Sydoriak, W. M. *Fuel bed 
+  characteristics of Sierra Nevada conifers.* West. J. Appl. For. 13, 73–84 
+  (1998). https://doi.org/10.1093/wjaf/13.3.73
+  

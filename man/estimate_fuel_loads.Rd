@@ -5,7 +5,7 @@
 \title{Estimate fuel loads}
 \usage{
 estimate_fuel_loads(fuels_location, treelist_location,
-  results_type = "full")
+  results_type = "results_only")
 }
 \arguments{
 \item{fuels_location}{The full file path to the .csv file with the Brown's
