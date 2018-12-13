@@ -1,0 +1,16 @@
+citHeader("To cite Rfuels in publications use:")
+
+citEntry(entry = "Manual",
+  title = "{Rfuels}: Forest Fuels from Brown's Transects",
+  author = personList(as.person("Danny Foster"),
+                      as.person("Scott Stepehens"),
+                      as.person("Jason Moghaddas"),
+                      as.person("Jan Van Wagtendonk")),
+  address = "Berkeley, CA",
+  year = 2018,
+  url = "https://github.com/danfosterfire/Rfuels",
+
+  textVersion =
+  paste("Danny Foster, Scott Stephens, Jason Moghaddas, and Jan Van Wagtendonk",
+        "(2018). Rfuels: Forest Fuels from Brown's Transects.",
+        "Berkeley, CA. URL https://github.com/danfosterfire/Rfuels"))
