@@ -4,15 +4,15 @@
 \alias{estimate_fuel_loads}
 \title{Estimate fuel loads}
 \usage{
-estimate_fuel_loads(fuels_location, treelist_location,
+estimate_fuel_loads(fuels_data, trees_data,
   results_type = "results_only")
 }
 \arguments{
-\item{fuels_location}{The full file path to the .csv file with the Brown's
-transects data. See 'import_fuels()' for more info.}
+\item{fuels_data}{The dataframe with the Brown's transect observations
+describing the fuels. See the vignette and/or README for more info.}
 
-\item{treelist_location}{The full file path to the .csv file with the
-treelist data. See 'import_treelist()' for more info.}
+\item{trees_data}{The dataframe with the observations of individual trees
+(aka the treelist). See the vignette and/or README for more info.}
 
 \item{results_type}{Either 'full', 'results_only', or 'fuels_only'. Sets the
 verbosity of the returned results dataframe. 'full' includes observation

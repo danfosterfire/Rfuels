@@ -10,9 +10,7 @@ aggregate_treelist(treelist)
 \item{treelist}{A treelist - a tidy dataframe with a row for each observation
 of an individual tree (a single tree may have multiple rows if a plot was
 visited more than once), and columns for plot_id, inv_date, species, and
-dbh_cm. Users are strongly encouraged to use the function import_treelist()
-to import and validate their treelist. See "help(import_treelist)" for more
-details.}
+dbh_cm. See "help(validate_treelist)" for more details.}
 }
 \value{
 A tidy data frame with a row for each observation of a sampling

@@ -1,13 +1,13 @@
-# Import Fuels Data ------------------------------------------------------------
+# Validate Fuels Data ------------------------------------------------------------
 
-#' Import fuels data.
+#' Validate fuels data
 #'
-#' Load, validate, and prepare fuels data. This function loads the .csv file
-#' containing the observations from the Brown's transects, checks that the
-#' .csv file is properly formatted, and returns a properly-typed tidy data
-#' frame with the observed data.
+#' Load, validate, and prepare fuels data. This function checks a data frame
+#' containing the observations from the Brown's transects. We test whether
+#' all necessary columns are present and labeled correctly, and return a
+#' properly-typed tidy data frame with the observed data.
 #'
-#'The source .csv file must have a row for each Brown's transect, and
+#'The source data frame must have a row for each Brown's transect, and
 #'at least these columns:
 #' \describe{
 #'   \item{plot_id}{Plot ids must be unique plot identifiers. (E.g.,
@@ -55,21 +55,18 @@
 #' not the plot slope. If a slope_percent is not supplied, we set the slope
 #' correction factor to 1 (no slope).
 #'
-#' @param file_path The filepath to the .csv file containing the observations
-#' from the Brown's transects for surface fuels.
+#' @param fuels_data A tidy data frame containing the observations
+#' from the Brown's transects for surface fuels. Must meet the requirements
+#' described above.
 #'
 #' @return A tidy dataframe with the observed fuels data. This is primarily
 #' a validation function - the format and meaning of the data frame should
 #' match that of the import file.
 #'
 #'
-import_fuels =
+validate_fuels =
 
-  function(file_path){
-
-    # load the file
-    fuels_data = utils::read.csv(file_path,
-                          stringsAsFactors = TRUE)
+  function(fuels_data){
 
     # these are the necessary columns
     necessary_columns =
@@ -81,7 +78,7 @@ import_fuels =
     # if the file doesn't have all the necessary columns, throw an error
     if (!all(is.element(necessary_columns, names(fuels_data)))) {
 
-      stop('.csv file is missing important columns! Try "help(import_fuels)"
+      stop('fuels_data is missing important columns! Try "help(validate_fuels)"
            for more information.')
     }
 
@@ -146,18 +143,17 @@ import_fuels =
   }
 
 
-# Import Treelist --------------------------------------------------------
+# Validate Treelist --------------------------------------------------------
 
-#' Import treelist.
+#' Validate treelist
 #'
-#' Load, validate, and prepare a treelist for each plot. This function loads
-#' the .csv file containing a treelist, checks that the
-#' .csv file is properly formatted, and returns a properly-typed tidy data
-#' frame with a row for each individual tree, and columns for relevant
-#' identifiers or measurements.
+#' Load, validate, and prepare a treelist for each plot. This function checks
+#' that the treelist dataframe is properly formatted, and returns a
+#' properly-typed tidy data frame with a row for each individual tree, and
+#' columns for relevant identifiers or measurements.
 #'
-#' The source .csv file must have a row for each observation of each individual
-#' tree, and at least these columns:
+#' The treelist dataframe must have a row for each observation of each
+#' individual tree, and at least these columns:
 #' \describe{
 #'   \item{plot_id}{Plot ids must be unique plot identifiers. (E.g.,
 #'   if you have a nested study design with "stand A plot 1" and "stand B plot
@@ -184,19 +180,15 @@ import_fuels =
 #'   centimeters.}
 #' }
 #'
-#' @param file_path The filepath to the .csv file containing the treelist.
+#' @param trees_data A tidy dataframe with the treelist (as described above).
 #'
 #' @return A tidy dataframe with the treelist. This is primarily
 #' a validation function - the format and meaning of the data frame should
-#' match that of the import file.
+#' match that of the import dataframe.
 #'
-import_treelist =
+validate_treelist =
 
-  function(file_path){
-
-    # load the file
-    trees_data = utils::read.csv(file_path,
-                          stringsAsFactors = TRUE)
+  function(trees_data){
 
     # these are the necessary columns
     necessary_columns =
@@ -205,13 +197,17 @@ import_treelist =
     # if the file doesn't have all the necessary columns, throw an error
     if (!all(is.element(necessary_columns, names(trees_data)))){
 
-      stop('.csv file is missing important columns! Try "help(import_treelist)"
-           for more information.')
+      stop('
+  trees_data is missing important columns! Try "help(validate_treelist)"
+  for more information.
+          ')
     }
 
     # check for negative values, and if found, throw an error
     if (min(trees_data[,c('dbh_cm')]) < 0){
-      stop('Trees can not have a negative dbh! Clean up source .csv file.')
+      stop('
+  Trees can not have a negative dbh! Clean up trees_data.
+           ')
     }
 
     # for now, coerce species to a character because we may modify it
@@ -228,11 +224,12 @@ import_treelist =
                sep = '  ')
 
       # throw a warning
-      warning('Not all species codes were recognized. Unrecognized codes were
-        converted to "OTHER" and will receive generic coefficients. Try
-        "help(import_treelist)" for more info.
+      warning('
+  Not all species codes were recognized. Unrecognized codes were
+    converted to "OTHER" and will receive generic coefficients. Try
+    "help(validate_treelist)" for more info.
 
-        Unrecognized codes:  ', unrecognized_codes)
+    Unrecognized codes:  ', unrecognized_codes,'\n')
 
       # map the unrecognized species to 'OTHER'
       trees_data[!is.element(trees_data$species,
@@ -277,9 +274,7 @@ import_treelist =
 #' @param treelist A treelist - a tidy dataframe with a row for each observation
 #' of an individual tree (a single tree may have multiple rows if a plot was
 #' visited more than once), and columns for plot_id, inv_date, species, and
-#' dbh_cm. Users are strongly encouraged to use the function import_treelist()
-#' to import and validate their treelist. See "help(import_treelist)" for more
-#' details.
+#' dbh_cm. See "help(validate_treelist)" for more details.
 #'
 #' @return A tidy data frame with a row for each observation of a sampling
 #' location (a unique combination of plot_id and inv_date), and columns for

@@ -3,13 +3,20 @@ context("Test results")
 testthat::test_that('Package and spreadsheet methods agree',{
 
   # use this package to estimate fuel loads using the example data
+
+  ## first, load the example data
+  example_fuels_data = read.csv(system.file('extdata', 'example_fuels.csv',
+                                          package = 'Rfuels'),
+                             stringsAsFactors = TRUE)
+
+  example_trees_data = read.csv(system.file('extdata', 'example_treelist.csv',
+                                          package = 'Rfuels'),
+                             stringsAsFactors = TRUE)
+
+  ## estimate fuel loads using the example data
   results_from_package =
-    estimate_fuel_loads(fuels_location =
-                          system.file('extdata','example_fuels.csv',
-                                      package = 'Rfuels'),
-                        treelist_location =
-                          system.file('extdata','example_treelist.csv',
-                                      package = 'Rfuels'),
+    estimate_fuel_loads(fuels_data = example_fuels_data,
+                        trees_data = example_trees_data,
                         results_type = 'full')
 
   # load the fuel load estimates from the same example data; these were

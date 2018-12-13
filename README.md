@@ -39,8 +39,8 @@ Using Rfuels
 Rfuels provides a high-level wrapper function, **estimate\_fuel\_loads()**, which
 takes three arguments:
 
--   *fuels\_location*, the filepath to a properly formatted .csv file containing the observed fuels data
--   *treelist\_location*, the filepath to a properly formatted .csv file containg the observed tree data
+-   *fuels\_data*, a properly-formatted dataframe containing the observed fuels data
+-   *trees\_data*, a properly-formatted containg the observed tree data
 -   *results\_type*, either 'full', 'results\_only', or 'fuels\_only'. This sets the verbosity of the results dataframe.
 
 **estimate\_fuel\_loads()** will return a tidy dataframe, with each row a unique observation (a fuels transect sampled on a specific date) and columns describing the surface fuel load in various subcategories.
@@ -66,7 +66,7 @@ Surface fuels should be recorded in the field following Brown (1974) or a simila
 
 -   Most versions of the protocol also call for measuring the depth of the entire fuelbed, but this information is not used for estimating the fuel load represented by the sample
 
-Rfuels requires the input fuels data to be formatted as a .csv file with a row for each observation (a transect on a specific date). The .csv table must have at least these columns (column names are exact):
+Rfuels requires the input fuels data to be formatted as a dataframe with a row for each observation (a transect on a specific date). The dataframe must have at least these columns (column names are exact):
 
 -   **plot\_id**: Plot IDs identify the sampling location. If you have a nested study design with "stand A plot 1" and "stand B plot 1", use "A-1" and "B-1" as PlotIDs. (This will be helpful when running statistical analyses later.) There may be multiple inventory dates per plot\_id and/or multiple transects sharing a plot\_id. plot\_id will be coerced to a character vector on import.
 
@@ -82,11 +82,11 @@ Rfuels requires the input fuels data to be formatted as a .csv file with a row f
 
 -   **sum\_d2\_1000r\_cm2** and **sum\_d2\_1000s\_cm2** The sum-of-squared-diameters for 1000-hour fuels on the transect, for rotten and sound fuels respectively. Users must aggregate their large fuels (1000-hour) into sound or rotten classes, and sum the squared diameters (in cm) for all 1000-s or 1000-r intersections on the transect.
 
-Additionally, the .csv file *may* have a column for **slope\_percent**, the slope (in percent) along the transect. Brown's equations include the option to correct for the slope effect on horizontal length of transects. *Keep in mind that this correction factor applies to the transect slope, not the plot slope.* If a slope\_percent is not supplied, we set the slope correction factor to 1 (no slope).
+Additionally, the dataframe *may* have a column for **slope\_percent**, the slope (in percent) along the transect. Brown's equations include the option to correct for the slope effect on horizontal length of transects. *Keep in mind that this correction factor applies to the transect slope, not the plot slope.* If a slope\_percent is not supplied, we set the slope correction factor to 1 (no slope).
 
-### Treelist
+### Trees Data
 
-The source .csv file must have a row for each observation of each individual tree on each sampling date, and at least these columns:
+The dataframe must have a row for each observation of each individual tree on each sampling date (this format is commonly called a "treelist"). The treelist must have at least these columns:
 
 -   **plot\_id**: Plot IDs identify the sampling location. If you have a nested study design with "stand A plot 1" and "stand B plot 1", use full nested identifiers (e.g. "A-1" and "B-1"). This will be helpful when running statistical analyses later.) There may be multiple inventory dates per plot\_id and/or multiple transects sharing a plot\_id. plot\_id will be coerced to a character vector on import.
 
@@ -96,6 +96,57 @@ The source .csv file must have a row for each observation of each individual tre
 
 -   **dbh\_cm**: The diameter at breast height (4.5', 1.37m) of the tree in centimeters.
 
+Load Data
+---------
+
+Our nice example data are .csv files which are already properly formatted:
+
+``` r
+# load the example fuels data from the .csv file
+example_fuels_data = read.csv(file = 'path/to/your/data/fuels.csv',
+                              stringsAsFactors = TRUE)
+
+# load the example trees data from the .csv file
+example_trees_data = read.csv(file = 'path/to/your/data/trees.csv',
+                              stringsAsFactors = TRUE)
+```
+
+And here's what the example data look like:
+
+``` r
+head(example_fuels_data)
+#>      plot_id inv_date azimuth x1h_length_m x10h_length_m x100h_length_m
+#> 1 0040-00007 6/1/2001     224         1.83          1.83           3.05
+#> 2 0040-00007 6/1/2001     336         1.83          1.83           3.05
+#> 3 0040-00002 6/1/2001     129         1.83          1.83           3.05
+#> 4 0040-00002 6/1/2001     190         1.83          1.83           3.05
+#> 5 0040-00003 6/1/2001     228         1.83          1.83           3.05
+#> 6 0040-00003 6/1/2001     296         1.83          1.83           3.05
+#>   x1000h_length_m count_x1h count_x10h count_x100h duff_depth_cm
+#> 1           11.34        47          4           0           4.5
+#> 2           11.34        32          5           1           4.0
+#> 3           11.34        32          6           0           3.5
+#> 4           11.34        35          5           1           2.0
+#> 5           11.34         5          0           1           1.5
+#> 6           11.34         4          0           0           1.0
+#>   litter_depth_cm sum_d2_1000r_cm2 sum_d2_1000s_cm2
+#> 1             3.5                0                0
+#> 2             3.5              421                0
+#> 3             3.0              196                0
+#> 4             2.0              361                0
+#> 5             2.5              565                0
+#> 6             3.5              121                0
+
+head(example_trees_data)
+#>      plot_id inv_date species dbh_cm
+#> 1 0040-00002 6/1/2001    PSME   11.4
+#> 2 0040-00002 6/1/2001    ABCO   13.2
+#> 3 0040-00002 6/1/2001    ABCO   23.9
+#> 4 0040-00002 6/1/2001    CADE   28.7
+#> 5 0040-00002 6/1/2001    PSME   34.5
+#> 6 0040-00002 6/1/2001    PSME   35.1
+```
+
 Call estimate\_fuel\_loads()
 ----------------------------
 
@@ -104,22 +155,19 @@ Once your input data are properly formatted, you can call estimate\_fuel\_loads(
 ``` r
 transect_fuel_loads =  
   
-  estimate_fuel_loads(fuels_location =
-                          system.file('extdata','example_fuels.csv',
-                                      package = 'Rfuels'),
-                      treelist_location =
-                          system.file('extdata','example_treelist.csv',
-                                      package = 'Rfuels'),
+  estimate_fuel_loads(fuels_data = example_fuels_data,
+                      trees_data = example_trees_data,
                       results_type = 'results_only')
-#> Warning in import_treelist(file_path = treelist_location): Not all species codes were recognized. Unrecognized codes were
-#>         converted to "OTHER" and will receive generic coefficients. Try
-#>         "help(import_treelist)" for more info.
+#> Warning in validate_treelist(trees_data = trees_data): 
+#>   Not all species codes were recognized. Unrecognized codes were
+#>     converted to "OTHER" and will receive generic coefficients. Try
+#>     "help(validate_treelist)" for more info.
 #> 
-#>         Unrecognized codes:  QUKE
+#>     Unrecognized codes:  QUKE
 #> Return results table with observation ID, fuel loads, and overstory info
 ```
 
-We got two a message about the type of results returned, and also a warning about our input treelist. Our dataset includes *Quercus kelloggii*, which isn't one of the tree species for which we have empirical data to plug into the fuel load estimations. **estimate\_fuel\_loads()** makes a best-guess and counts all unrecognized tree species as 'OTHER', and applies the "All species" generic coefficients from Van Wagtendonk et al. (1996) and (1998).
+We got a message about the type of results returned, and also a warning about our input treelist. Our dataset includes *Quercus kelloggii*, which isn't one of the tree species for which we have empirical data to plug into the fuel load estimations. **estimate\_fuel\_loads()** makes a best-guess and counts all unrecognized tree species as 'OTHER', and applies the "All species" generic coefficients from Van Wagtendonk et al. (1996) and (1998).
 
 (How appropriate it is to apply an 'all species' constant for Sierra Nevada conifers to black oak fuels is another question; hopefully in the future we can expand the empirical dataset Rfuels draws upon.)
 

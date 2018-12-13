@@ -7,11 +7,11 @@
 #' transect data and a treelist describing the local
 #' overstory for each observation. For details, see the vignette.
 #'
-#' @param fuels_location The full file path to the .csv file with the Brown's
-#' transects data. See 'import_fuels()' for more info.
+#' @param fuels_data The dataframe with the Brown's transect observations
+#' describing the fuels. See the vignette and/or README for more info.
 #'
-#' @param treelist_location The full file path to the .csv file with the
-#' treelist data. See 'import_treelist()' for more info.
+#' @param trees_data The dataframe with the observations of individual trees
+#' (aka the treelist). See the vignette and/or README for more info.
 #'
 #' @param results_type Either 'full', 'results_only', or 'fuels_only'. Sets the
 #' verbosity of the returned results dataframe. 'full' includes observation
@@ -34,17 +34,17 @@
 #' @export
 estimate_fuel_loads =
 
-  function(fuels_location,
-           treelist_location,
+  function(fuels_data,
+           trees_data,
            results_type = 'results_only'){
 
     # script currently requires k = 1.234 (fuels in cm, transects in m, and
     # fuel loads in Mg / ha)
     k_value = 1.234
 
-    # load and validate the input data
-    fuels = import_fuels(file_path = fuels_location)
-    trees = import_treelist(file_path = treelist_location)
+    # validate the input data
+    fuels = validate_fuels(fuels_data = fuels_data)
+    trees = validate_treelist(trees_data = trees_data)
 
     # make the pBA table for the overstory
     overstory = aggregate_treelist(treelist = trees)

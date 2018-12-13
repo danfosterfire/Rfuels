@@ -17,8 +17,6 @@ knitr::opts_chunk$set(
 devtools::load_all()
 ```
 
-
-
 #Introduction
 
 Rfuels is a small package for estimating surface fuel loads from Brown's 
@@ -68,10 +66,9 @@ library(Rfuels)
 Rfuels provides a high-level wrapper function, **estimate_fuel_loads()**, which  
 takes three arguments:
 
-  - *fuels_location*, the filepath to a properly formatted .csv file containing 
+  - *fuels_data*, a properly-formatted dataframe containing 
   the observed fuels data
-  - *treelist_location*, the filepath to a properly formatted .csv file containg 
-  the observed tree data
+  - *trees_data*, a properly-formatted containg the observed tree data
   - *results_type*, either 'full', 'results_only', or 'fuels_only'. This sets 
   the verbosity of the results dataframe.
   
@@ -110,8 +107,8 @@ but the broad outline is common:
   entire fuelbed, but this information is not used for estimating the fuel 
   load represented by the sample
   
-Rfuels requires the input fuels data to be formatted as a .csv file with a 
-row for each observation (a transect on a specific date). The .csv table must 
+Rfuels requires the input fuels data to be formatted as a dataframe with a 
+row for each observation (a transect on a specific date). The dataframe must 
 have at least these columns (column names are exact):
 
   - **plot_id**: Plot IDs identify the sampling location. If you have 
@@ -153,17 +150,18 @@ have at least these columns (column names are exact):
  sound or rotten classes, and sum the squared diameters (in cm) for all
  1000-s or 1000-r intersections on the transect.
 
-Additionally, the .csv file *may* have a column for **slope_percent**, the
+Additionally, the dataframe *may* have a column for **slope_percent**, the
 slope (in percent) along the transect. Brown's equations include the
 option to correct for the slope effect on horizontal length of transects.
 *Keep in mind that this correction factor applies to the transect slope,
 not the plot slope.* If a slope_percent is not supplied, we set the slope
 correction factor to 1 (no slope).
 
-###Treelist
+###Trees Data
 
-The source .csv file must have a row for each observation of each individual
-tree on each sampling date, and at least these columns:
+The dataframe must have a row for each observation of each individual
+tree on each sampling date (this format is commonly called a "treelist"). The 
+treelist must have at least these columns:
 
   - **plot_id**: Plot IDs identify the sampling location. If you have 
   a nested study design with "stand A plot 1" and "stand B plot 1", use full 
@@ -188,6 +186,45 @@ tree on each sampling date, and at least these columns:
   - **dbh_cm**: The diameter at breast height (4.5', 1.37m) of the tree in
   centimeters.
 
+## Load Data
+
+Our nice example data are .csv files which are already properly formatted:
+
+```{r eval = FALSE}
+# load the example fuels data from the .csv file
+example_fuels_data = read.csv(file = 'path/to/your/data/fuels.csv',
+                              stringsAsFactors = TRUE)
+
+# load the example trees data from the .csv file
+example_trees_data = read.csv(file = 'path/to/your/data/trees.csv',
+                              stringsAsFactors = TRUE)
+```
+
+And here's what the example data look like:
+
+```{r include = FALSE}
+# load the example fuels data from the .csv file
+example_fuels_data = 
+  utils::read.csv(file = system.file('extdata', 'example_fuels.csv', 
+                                      package = 'Rfuels'),
+                  stringsAsFactors = TRUE)
+
+
+
+# load the example trees data from the .csv file
+example_trees_data = 
+  utils::read.csv(file = system.file('extdata', 'example_treelist.csv',
+                                     package = 'Rfuels'),
+                  stringsAsFactors = TRUE)
+
+```
+
+```{r}
+head(example_fuels_data)
+
+head(example_trees_data)
+```
+
 ##Call estimate_fuel_loads()
 
 Once your input data are properly formatted, you can call estimate_fuel_loads() 
@@ -196,18 +233,14 @@ and assign the resulting dataframe to a variable:
 ```{r}
 transect_fuel_loads =  
   
-  estimate_fuel_loads(fuels_location =
-                          system.file('extdata','example_fuels.csv',
-                                      package = 'Rfuels'),
-                      treelist_location =
-                          system.file('extdata','example_treelist.csv',
-                                      package = 'Rfuels'),
+  estimate_fuel_loads(fuels_data = example_fuels_data,
+                      trees_data = example_trees_data,
                       results_type = 'results_only')
 
 
 ```
 
-We got two a message about the type of results returned, and also a warning 
+We got a message about the type of results returned, and also a warning 
 about our input treelist. Our dataset includes *Quercus kelloggii*, which isn't 
 one of the tree species for which we have empirical data to plug into the fuel 
 load estimations. **estimate_fuel_loads()** makes a best-guess and counts all 
@@ -623,4 +656,6 @@ Table 8.
   - Van Wagtendonk, J. W., Benedict, J. M. & Sydoriak, W. M. *Fuel bed 
   characteristics of Sierra Nevada conifers.* West. J. Appl. For. 13, 73–84 
   (1998). https://doi.org/10.1093/wjaf/13.3.73
+  
+
   
