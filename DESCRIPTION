@@ -10,11 +10,13 @@ Description: This package includes code and supporting documentation for a
     method to calculate total fuel loads from Brown's transects
     for Sierra Nevada tree species. This method was 
     originally developed by Jason Moghaddas and Scott 
-    Stephens, and relies on the work of many others (see documentation). The 
+    Stephens, and relies on the work of many others. The 
     purpose of this package is to implement the method in R for improved 
     usability, repeatability, and clarity. The R implementation 
     was developed by Danny Foster in 2017-2018, with financial support from the 
     Baker-Bidwell Continuing Fellowship.
+URL: https://github.com/danfosterfire/Rfuels
+BugReports: htts://github.com/danfosterfire/Rfuels/issues
 Depends: R (>= 3.5.0)
 License: GPL-3
 Encoding: UTF-8
