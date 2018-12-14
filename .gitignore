@@ -5,4 +5,3 @@ inst/doc
 .Rhistory
 .RData
 .Ruserdata
-tests/testthat/test_validation.R

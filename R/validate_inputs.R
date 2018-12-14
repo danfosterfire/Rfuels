@@ -68,33 +68,23 @@ validate_fuels =
 
   function(fuels_data){
 
-    # these are the necessary columns
-    necessary_columns =
-      c('plot_id','inv_date','azimuth',
-        'x1h_length_m', 'x10h_length_m', 'x100h_length_m', 'x1000h_length_m',
-        'count_x1h', 'count_x10h','count_x100h',
-        'duff_depth_cm','litter_depth_cm','sum_d2_1000r_cm2','sum_d2_1000s_cm2')
+    # test that all columns are present
+    test_fuels_all_columns(fuels_data)
 
-    # if the file doesn't have all the necessary columns, throw an error
-    if (!all(is.element(necessary_columns, names(fuels_data)))) {
+    # test that transect counts and azimuths are whole numbers (within 0.0001)
+    test_whole_numbers(fuels_data)
 
-      stop('fuels_data is missing important columns! Try "help(validate_fuels)"
-           for more information.')
-    }
+    # test for inappropriate negative values
+    test_fuels_negatives(fuels_data)
 
-    # test whether the counts are integers
-    if (!is.integer(fuels_data[,'count_x1h']) |
-        !is.integer(fuels_data[,'count_x10h']) |
-        !is.integer(fuels_data[,'count_x100h'])) {
+    # test that the azimuth is in the range 0:359 (inclusive)
+    test_azimuth_range(fuels_data)
 
-      # if not, throw an error
-      stop('
-      Some of the counts are not integers! Check fuels data.
-           ')
-    }
+    # test that the transect lengths are greater than 0
+    test_transect_lengths_range(fuels_data)
 
-    # coerce column classes; this should throw an error if there are incompatible
-    # entries (it doesn't for integers!)
+    # coerce column classes; this should throw errors for a variety of issues
+    # including unwanted 'character' values and ill-formatted dates
     fuels_data[,'plot_id'] =
       factor(as.character(fuels_data[,'plot_id']))
     fuels_data[,'inv_date'] =
@@ -124,22 +114,21 @@ validate_fuels =
     fuels_data[,'sum_d2_1000s_cm2'] =
       as.numeric(as.character(fuels_data[,'sum_d2_1000s_cm2']))
 
-    # check for negative values, and if found, throw an error
-    if (min(fuels_data[,c('x1h_length_m', 'x10h_length_m',
-                          'x100h_length_m', 'x1000h_length_m',
-                          'count_x1h','count_x10h','count_x100h',
-                          'duff_depth_cm','litter_depth_cm',
-                          'sum_d2_1000r_cm2','sum_d2_1000r_cm2')]) < 0){
-      stop('Negative counts, depths, or diameters found. Clean up source .csv
-           file.')
-    }
-
     # check for a slope column
     if (is.element('slope_percent', names(fuels_data))) {
 
-      # if there is a slope column, make slp_c (the correction factor) based on
-      # the slope
-      fuels_data[,'slp_c'] = sqrt(1+((fuels_data[,'percent_slope']/100)^2))
+      # if there is a slope column,
+      ## first validate it
+      if (any(fuels_data[, 'slope_percent'] < 0, na.rm = TRUE)){
+
+        stop('Problem with slope_percent; clean up fuels data.')
+      }
+
+      fuels_data[, 'slope_percent'] =
+        as.numeric(as.character(fuels_data[,'slope_percent']))
+
+      # make slp_c (the correction factor) based on the slope
+      fuels_data[,'slp_c'] = sqrt(1+((fuels_data[,'slope_percent']/100)^2))
 
     } else {
 
@@ -147,6 +136,9 @@ validate_fuels =
       fuels_data[,'slp_c'] = 1
 
     }
+
+    # test for NA values; NAs are allowable (with a warning) in some columns
+    test_fuels_NAs(fuels_data)
 
     # return the data frame
     return(fuels_data)
@@ -201,25 +193,14 @@ validate_treelist =
 
   function(trees_data){
 
-    # these are the necessary columns
-    necessary_columns =
-      c('plot_id','inv_date','species','dbh_cm')
+    # check that all important columns are present
+    test_trees_all_columns(trees_data)
 
-    # if the file doesn't have all the necessary columns, throw an error
-    if (!all(is.element(necessary_columns, names(trees_data)))){
+    # check that there aren't NAs in important columns
+    test_trees_NAs(trees_data)
 
-      stop('
-  trees_data is missing important columns! Try "help(validate_treelist)"
-  for more information.
-          ')
-    }
-
-    # check for negative values, and if found, throw an error
-    if (min(trees_data[,c('dbh_cm')]) < 0){
-      stop('
-  Trees can not have a negative dbh! Clean up trees_data.
-           ')
-    }
+    # check that there are no negative DBHs
+    test_trees_negatives(trees_data)
 
     # for now, coerce species to a character because we may modify it
     trees_data[,'species'] = as.character(trees_data[,'species'])
@@ -235,8 +216,7 @@ validate_treelist =
                sep = '  ')
 
       # throw a warning
-      warning('
-  Not all species codes were recognized. Unrecognized codes were
+      warning('Not all species codes were recognized. Unrecognized codes were
     converted to "OTHER" and will receive generic coefficients. Try
     "help(validate_treelist)" for more info.
 
@@ -364,4 +344,118 @@ aggregate_treelist =
 # are not available, or run sensitivity tests on different overstory composition,
 # etc.
 
+# Validate Specific Columns ----------------------------------------------------
 
+test_fuels_NAs = function(fuels_data){
+
+  if (any(is.na(fuels_data[, c('plot_id', 'inv_date', 'azimuth')]))){
+
+    stop('fuels data cannot have NA values for plot_id, inv_date, or azimuth')
+
+  }
+
+  if (any(is.na(fuels_data[, c('x1h_length_m', 'x10h_length_m',
+                               'x100h_length_m', 'x1000h_length_m',
+                               'count_x1h', 'count_x10h', 'count_x100h',
+                               'duff_depth_cm', 'litter_depth_cm',
+                               'sum_d2_1000r_cm2', 'sum_d2_1000s_cm2')]))){
+
+    warning('some fuels data have NA values;
+            not all load estimates will be calculated.')
+  }
+
+}
+
+test_trees_NAs = function(trees_data){
+
+  if (any(is.na(trees_data[, c('plot_id', 'inv_date', 'species', 'dbh_cm')]))){
+
+    stop('trees data cannot have NA values for plot_id, inv_date, species,
+    or dbh_cm')
+
+  }
+
+}
+
+test_trees_negatives = function(trees_data){
+
+  if (any(trees_data[, 'dbh_cm'] < 0, na.rm = TRUE)) {
+
+    stop('trees cannot have negative DBH')
+
+  }
+}
+
+test_fuels_negatives = function(fuels_data){
+
+  if (any(fuels_data[, c('count_x1h', 'count_x10h', 'count_x100h',
+                         'duff_depth_cm', 'litter_depth_cm',
+                         'sum_d2_1000r_cm2', 'sum_d2_1000s_cm2')] < 0,
+          na.rm = TRUE)) {
+
+    stop('some fuels data have negative values recorded')
+
+  }
+}
+
+test_whole_numbers = function(fuels_data){
+
+  is.wholenumber = function(x){abs(x-round(x)) < 0.0001}
+
+  if (any(!is.wholenumber(fuels_data[, c('count_x1h', 'count_x10h',
+                                     'count_x100h', 'azimuth')]),
+          na.rm = TRUE)){
+
+    stop('count_x1h, count_x10h, count_x100h, and azimuth must be whole numbers')
+  }
+}
+
+test_azimuth_range = function(fuels_data){
+
+  if (any(fuels_data[, 'azimuth'] > 359, na.rm = TRUE) |
+      any(fuels_data[, 'azimuth'] < 0, na.rm = TRUE)){
+
+    stop('azimuths for fuels data must be between 0 and 359')
+  }
+}
+
+test_transect_lengths_range = function(fuels_data){
+
+  if (any(fuels_data[, c('x1h_length_m', 'x10h_length_m', 'x100h_length_m',
+                          'x1000h_length_m')] <=0, na.rm = TRUE)) {
+
+    stop('fuels transect lengths must greater than 0')
+
+  }
+}
+
+test_fuels_all_columns = function(fuels_data){
+
+  # these are the necessary columns
+  necessary_columns =
+    c('plot_id','inv_date','azimuth',
+      'x1h_length_m', 'x10h_length_m', 'x100h_length_m', 'x1000h_length_m',
+      'count_x1h', 'count_x10h','count_x100h',
+      'duff_depth_cm','litter_depth_cm','sum_d2_1000r_cm2','sum_d2_1000s_cm2')
+
+  # if the file doesn't have all the necessary columns, throw an error
+  if (!all(is.element(necessary_columns, names(fuels_data)))) {
+
+    stop('fuels_data is missing important columns! Try "help(validate_fuels)"
+    for more information.')
+  }
+}
+
+test_trees_all_columns = function(trees_data){
+
+  # these are the necessary columns
+  necessary_columns =
+    c('plot_id','inv_date','species','dbh_cm')
+
+  # if the file doesn't have all the necessary columns, throw an error
+  if (!all(is.element(necessary_columns, names(trees_data)))){
+
+    stop('trees_data is missing important columns! Try "help(validate_treelist)"
+         for more information.')
+  }
+}
