@@ -55,7 +55,37 @@ estimate_fuel_loads =
       merge(x = overstory,
             y = fuels,
             by = c('plot_id', 'inv_date'),
-            all.y = TRUE) # we may have multiple fuels transects per plot_id
+            all = TRUE) # we may have multiple fuels transects per plot_id
+
+    # check for unmached fuels  or overstory rows
+    if (any(is.na(combined_data[,'azimuth'])) |
+        any(is.na(combined_data[, 'pBA_(all)']))){
+
+      # list the plot_id:inv_dates which are missing azimuth
+      overstory_without_fuels =
+        paste0(
+          paste0(combined_data[is.na(combined_data$azimuth), 'plot_id'],
+               ':',
+               combined_data[is.na(combined_data$azimuth), 'inv_date']),
+          sep = '   ', collapse = '')
+
+      # list the plot_id:inv_dates which are missing pBA_(all)
+      fuels_without_overstory =
+        paste0(
+          paste0(combined_data[is.na(combined_data$`pBA_(all)`), 'plot_id'],
+               ':',
+               combined_data[is.na(combined_data$`pBA_(all)`), 'inv_date']),
+          sep = '   ', collapse = '')
+
+
+      # deliver an informative error message
+      stop(paste0('Fuels data did not completely match trees data.
+          These plot_id:inv_dates have fuels data, but no overstory data:
+                  ', fuels_without_overstory, '
+          These plot_id:inv_dates have overstory data, but no fuels data:
+                  ', overstory_without_fuels, '\n'))
+
+    }
 
     # get the list of tree species included in the dataset
     species_present = get_spp_codes(overstory)
